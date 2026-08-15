@@ -28,45 +28,20 @@ jobs:
             --binary-images iso-hybrid \
             --source false
 
-      - name: Override apt mirrors to Aliyun + Tsinghua
+      - name: Override apt mirrors to Aliyun + Tsinghua (for local builds)
         run: |
-          MIRROR="http://mirrors.aliyun.com/debian/"
-          SECURITY="http://mirrors.aliyun.com/debian-security/"
+          # 仅在本地构建时生效（GitHub Actions 节点在中国镜像访问受限）
+          # 如需在中国节点构建，请取消注释下面的源配置
 
-          # lb/ 目录由 sudo lb config 创建，文件属 root，全部操作需要 sudo
-          sudo mkdir -p lb/config/archives
-
-          # apt 偏好
-          sudo tee /etc/apt/preferences > /dev/null << 'PREF'
-          Package: *
-          Pin: release o=Debian,a=bookworm
-          Pin-Priority: 1000
-          PREF
-
-          # 覆盖三阶段镜像源（chroot + live + binary）
-          sudo tee lb/config/archives/mirrors.binary.chroot > /dev/null << 'EOF'
-          deb http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware
-          deb http://mirrors.aliyun.com/debian-security/ bookworm-security main contrib non-free non-free-firmware
-          deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware
-          deb http://mirrors.tuna.tsinghua.edu.cn/debian-security/ bookworm-security main contrib non-free non-free-firmware
-          EOF
-
-          sudo tee lb/config/archives/mirrors.binary.chroot.chroot > /dev/null << 'EOF'
-          deb http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware
-          deb http://mirrors.aliyun.com/debian-security/ bookworm-security main contrib non-free non-free-firmware
-          deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware
-          deb http://mirrors.tuna.tsinghua.edu.cn/debian-security/ bookworm-security main contrib non-free non-free-firmware
-          EOF
-
-          sudo tee lb/config/archives/mirrors.binary.live > /dev/null << 'EOF'
-          deb http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware
-          deb http://mirrors.aliyun.com/debian-security/ bookworm-security main contrib non-free non-free-firmware
-          deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware
-          deb http://mirrors.tuna.tsinghua.edu.cn/debian-security/ bookworm-security main contrib non-free non-free-firmware
-          EOF
-
-          # 同步仓库的 archives 到 lb/ 目录
-          sudo cp -r config/archives/* lb/config/archives/
+          # MIRROR="http://mirrors.aliyun.com/debian/"
+          # SECURITY="http://mirrors.aliyun.com/debian-security/"
+          #
+          # sudo mkdir -p lb/config/archives
+          # printf 'deb %s bookworm main contrib non-free non-free-firmware\ndeb %s bookworm-security main contrib non-free non-free-firmware\n' \
+          #   "$MIRROR" "$SECURITY" | sudo tee lb/config/archives/mirrors.binary.chroot > /dev/null
+          # cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.chroot.chroot
+          # cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.live
+          echo "Using default Debian mirrors (GitHub Actions runner accessible)"
 
       - name: Add SSH package list
         run: |
@@ -75,20 +50,28 @@ jobs:
 
       - name: Copy repo config into live-build tree
         run: |
-          # 仓库的 package-lists 也要 sudo 复制
-          sudo cp -r config/package-lists lb/config/
+          sudo cp -r config/package-lists lb/config/ 2>/dev/null || true
 
       - name: Build the ISO
         run: |
-          sudo lb build 2>&1 | tail -80
-          ls -lh *.hybrid.iso 2>/dev/null || ls -lh *.iso 2>/dev/null || find . -name "*.iso" -ls
+          # 不用 tail，全部日志都保留，方便调试
+          sudo lb build
+          echo "--- Build exit code: $? ---"
 
       - name: Find ISO artifact
         id: find-iso
         run: |
+          # 查找 ISO 文件（多种命名方式）
           ISO=$(find . -name "*.hybrid.iso" -o -name "*.iso" | grep -v "stage\|source" | head -1)
           echo "iso_path=$ISO" >> $GITHUB_OUTPUT
-          echo "ISO: $ISO"
+          echo "Found ISO: $ISO"
+          if [ -z "$ISO" ]; then
+            echo "ERROR: No ISO file found!"
+            echo "Contents of current directory:"
+            ls -lh
+            echo "Contents of chroot stage:"
+            ls -lh chroot 2>/dev/null || echo "(chroot dir not found)"
+          fi
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4
