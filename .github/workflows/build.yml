@@ -20,37 +20,8 @@ jobs:
 
       - name: Configure live-build and mirrors
         run: |
-          # 在同一个 bash 进程里：lb config 之后修复镜像配置
-          bash -c '
-            sudo lb config \
-              --distribution bookworm \
-              --architectures amd64 \
-              --linux-flavours amd64 \
-              --bootappend-live "boot=live components splash" \
-              --binary-images iso-hybrid \
-              --source false \
-              --mode debian
-
-            # 修复所有 config 文件里的 security 镜像
-            # lb config 默认生成 http://security.debian.org/ (404)
-            # 正确路径：http://security.debian.org/debian-security
-            for f in config/bootstrap config/chroot config/binary; do
-              sudo sed -i "s|LB_PARENT_MIRROR_CHROOT_SECURITY=\"http://security.debian.org/\"|LB_PARENT_MIRROR_CHROOT_SECURITY=\"http://security.debian.org/debian-security\"|g" \"$f\"
-              sudo sed -i "s|LB_PARENT_MIRROR_BINARY_SECURITY=\"http://security.debian.org/\"|LB_PARENT_MIRROR_BINARY_SECURITY=\"http://security.debian.org/debian-security\"|g" \"$f\"
-              sudo sed -i "s|LB_MIRROR_CHROOT_SECURITY=\"http://security.debian.org/\"|LB_MIRROR_CHROOT_SECURITY=\"http://security.debian.org/debian-security\"|g" \"$f\"
-              sudo sed -i "s|LB_MIRROR_BINARY_SECURITY=\"http://security.debian.org/\"|LB_MIRROR_BINARY_SECURITY=\"http://security.debian.org/debian-security\"|g" \"$f\"
-            done
-
-            # 写入 archive override 文件（三阶段全部覆盖）
-            sudo mkdir -p config/archives
-            printf "deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware\ndeb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware\n" \
-              | sudo tee config/archives/mirrors.binary.chroot > /dev/null
-            cp config/archives/mirrors.binary.chroot config/archives/mirrors.binary.chroot.chroot
-            cp config/archives/mirrors.binary.chroot config/archives/mirrors.binary.live
-
-            echo "Done. Verifying security mirrors:"
-            grep -h "SECURITY" config/bootstrap config/chroot config/binary | grep -v "^#" | grep -v "^$"
-          '
+          chmod +x scripts/setup.sh
+          sudo scripts/setup.sh
 
       - name: Add SSH package
         run: |
