@@ -20,7 +20,7 @@ jobs:
 
       - name: Configure live-build
         run: |
-          # 强制使用 Debian 模式（Ubuntu 装的 live-build 默认是 Ubuntu 模式）
+          # 强制使用 Debian 模式
           sudo lb config \
             --distribution bookworm \
             --architectures amd64 \
@@ -30,21 +30,22 @@ jobs:
             --source false \
             --mode debian
 
-      - name: Configure apt mirrors
-        run: |
-          # security.debian.org 正确路径是 /debian-security，不是 /debian-security/bookworm/updates
-          sudo mkdir -p lb/config/archives
+          # 直接修改 bootstrap 配置，修复 security 镜像路径
+          # lb config 生成的默认值是 http://security.debian.org/debian-security bookworm/updates（404）
+          # 正确路径：http://security.debian.org/debian-security bookworm-security main（非 bookworm/updates）
+          sudo sed -i 's|http://security.debian.org/debian-security bookworm/updates|http://security.debian.org/debian-security bookworm-security main|g' config/bootstrap
+          sudo sed -i 's|http://security.debian.org/debian-security bookworm/updates|http://security.debian.org/debian-security bookworm-security main|g' config/chroot
+          sudo sed -i 's|http://security.debian.org/debian-security bookworm/updates|http://security.debian.org/debian-security bookworm-security main|g' config/binary
 
+          # 同时写入 archive 文件（三阶段全部覆盖）
           sudo tee lb/config/archives/mirrors.binary.chroot > /dev/null << 'EOF'
           deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
           deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
           EOF
-
           sudo tee lb/config/archives/mirrors.binary.chroot.chroot > /dev/null << 'EOF'
           deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
           deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
           EOF
-
           sudo tee lb/config/archives/mirrors.binary.live > /dev/null << 'EOF'
           deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
           deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
