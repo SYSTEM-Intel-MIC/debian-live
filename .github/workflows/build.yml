@@ -20,8 +20,7 @@ jobs:
 
       - name: Configure live-build
         run: |
-          # 不依赖 auto/ 脚本，直接在 workflow 里配置
-          # 强制使用 Debian 模式（Ubuntu 装的 live-build 默认是 Ubuntu 模式，会用错误的镜像）
+          # 强制使用 Debian 模式（Ubuntu 装的 live-build 默认是 Ubuntu 模式）
           sudo lb config \
             --distribution bookworm \
             --architectures amd64 \
@@ -33,15 +32,23 @@ jobs:
 
       - name: Configure apt mirrors
         run: |
-          # 镜像配置（GitHub Actions 节点可访问的源）
-          # 中国节点改为阿里云/清华源
+          # security.debian.org 正确路径是 /debian-security，不是 /debian-security/bookworm/updates
           sudo mkdir -p lb/config/archives
 
-          printf 'deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware\ndeb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware\n' \
-            | sudo tee lb/config/archives/mirrors.binary.chroot > /dev/null
+          sudo tee lb/config/archives/mirrors.binary.chroot > /dev/null << 'EOF'
+          deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
+          deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
+          EOF
 
-          sudo cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.chroot.chroot
-          sudo cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.live
+          sudo tee lb/config/archives/mirrors.binary.chroot.chroot > /dev/null << 'EOF'
+          deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
+          deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
+          EOF
+
+          sudo tee lb/config/archives/mirrors.binary.live > /dev/null << 'EOF'
+          deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
+          deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
+          EOF
 
       - name: Add SSH package
         run: |
@@ -51,14 +58,9 @@ jobs:
 
       - name: Build ISO
         run: |
-          # 直接运行构建命令，保留所有输出
           sudo lb build --debug 2>&1
           EXIT_CODE=$?
           echo "Build exit code: $EXIT_CODE"
-          echo ""
-          echo "=== Files in current directory ==="
-          ls -lh
-          echo ""
           echo "=== ISO files ==="
           find . -name "*.iso" -ls 2>/dev/null || echo "No ISO found"
           exit $EXIT_CODE
@@ -66,13 +68,11 @@ jobs:
       - name: Find ISO
         id: find-iso
         run: |
-          ISO=$(find . -name "*.hybrid.iso" -o -name "*.iso" 2>/dev/null | grep -v "stage\|source" | grep -v "chroot" | head -1)
+          ISO=$(find . -name "*.hybrid.iso" -o -name "*.iso" 2>/dev/null | grep -v "stage\|source" | head -1)
           echo "iso_path=$ISO" >> $GITHUB_OUTPUT
           echo "ISO=$ISO"
           if [ -z "$ISO" ]; then
-            echo "No ISO found in current directory"
-            find . -type f -name "*.iso" 2>/dev/null
-            ls -la *.iso 2>/dev/null || echo "No iso files"
+            echo "No ISO found"
           fi
 
       - name: Upload ISO
