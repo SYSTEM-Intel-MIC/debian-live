@@ -32,49 +32,48 @@ jobs:
         run: |
           MIRROR="http://mirrors.aliyun.com/debian/"
           SECURITY="http://mirrors.aliyun.com/debian-security/"
-          TUNA="http://mirrors.tuna.tsinghua.edu.cn/debian/"
-          TUNA_SEC="http://mirrors.tuna.tsinghua.edu.cn/debian-security/"
 
-          # 创建必要目录
-          sudo mkdir -p lb/apt
-          sudo mkdir -p lb/config/archives
-
-          # apt 偏好（优先用阿里源）
-          sudo tee lb/apt/preferences > /dev/null << 'PREF'
+          # lb/ 目录由 sudo lb config 创建，文件属 root，全部操作需要 sudo
+          sudo tee /etc/apt/preferences > /dev/null << 'PREF'
           Package: *
           Pin: release o=Debian,a=bookworm
           Pin-Priority: 1000
           PREF
 
-          # 覆盖镜像源配置（chroot + live + binary 三阶段全部覆盖）
-          tee lb/config/archives/mirrors.binary.chroot > /dev/null << 'EOF'
+          # 覆盖三阶段镜像源（chroot + live + binary）
+          sudo tee lb/config/archives/mirrors.binary.chroot > /dev/null << 'EOF'
           deb http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware
           deb http://mirrors.aliyun.com/debian-security/ bookworm-security main contrib non-free non-free-firmware
           deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware
           deb http://mirrors.tuna.tsinghua.edu.cn/debian-security/ bookworm-security main contrib non-free non-free-firmware
           EOF
 
-          cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.chroot.chroot
-          cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.live
+          sudo tee lb/config/archives/mirrors.binary.chroot.chroot > /dev/null << 'EOF'
+          deb http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware
+          deb http://mirrors.aliyun.com/debian-security/ bookworm-security main contrib non-free non-free-firmware
+          deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware
+          deb http://mirrors.tuna.tsinghua.edu.cn/debian-security/ bookworm-security main contrib non-free non-free-firmware
+          EOF
 
-          # 同时修改 bootstrap 配置文件（lb bootstrap 阶段直接读这个）
-          sudo sed -i "s|LB_MIRROR_CHROOT=.*|LB_MIRROR_CHROOT=\"$MIRROR\"|" lb/config/bootstrap
-          sudo sed -i "s|LB_MIRROR_CHROOT_SECURITY=.*|LB_MIRROR_CHROOT_SECURITY=\"$SECURITY\"|" lb/config/bootstrap
-          sudo sed -i "s|LB_MIRROR_BINARY=.*|LB_MIRROR_BINARY=\"$MIRROR\"|" lb/config/bootstrap
-          sudo sed -i "s|LB_MIRROR_BINARY_SECURITY=.*|LB_MIRROR_BINARY_SECURITY=\"$SECURITY\"|" lb/config/bootstrap
+          sudo tee lb/config/archives/mirrors.binary.live > /dev/null << 'EOF'
+          deb http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware
+          deb http://mirrors.aliyun.com/debian-security/ bookworm-security main contrib non-free non-free-firmware
+          deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware
+          deb http://mirrors.tuna.tsinghua.edu.cn/debian-security/ bookworm-security main contrib non-free non-free-firmware
+          EOF
+
+          # 同步仓库的 archives 到 lb/ 目录
+          sudo cp -r config/archives/* lb/config/archives/
 
       - name: Add SSH package list
         run: |
           mkdir -p config/package-lists
           echo "openssh-server" > config/package-lists/ssh.list.chroot
-          # standard 系统已由 lb 默认包含，不需要额外指定
 
       - name: Copy repo config into live-build tree
         run: |
-          # live-build 从 config/ 目录读取自定义配置
-          # 复制仓库的 package-lists 到 lb 目录
-          cp -r config/package-lists lb/config/
-          cp -r config/archives lb/config/
+          # 仓库的 package-lists 也要 sudo 复制
+          sudo cp -r config/package-lists lb/config/
 
       - name: Build the ISO
         run: |
