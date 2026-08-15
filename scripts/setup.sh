@@ -12,14 +12,16 @@ sudo lb config \
   --mode debian
 
 # 2. 禁用 security 源（所有阶段都禁用）
-# lb_chroot_apt 读取 config/chroot 里的 LB_SECURITY 来决定是否加 security 源
-# 禁用后统一用主镜像，security.debian.org 路径问题绕过去
+# lb_chroot_apt / lb_chroot_archives 读取 config/chroot 里的 LB_SECURITY 来决定是否加 security 源
 echo 'LB_SECURITY="false"' >> config/bootstrap
 echo 'LB_SECURITY="false"' >> config/chroot
 
-# 3. 覆盖 bootstrap 镜像（defaults.sh 里硬编码了 ftp.debian.org）
+# 3. 覆盖所有镜像变量（三个 config 文件都要改）
+# defaults.sh 硬编码了 ftp.debian.org，必须显式覆盖
 echo 'LB_MIRROR_BOOTSTRAP="http://deb.debian.org/debian/"' >> config/bootstrap
 echo 'LB_PARENT_MIRROR_BOOTSTRAP="http://deb.debian.org/debian/"' >> config/bootstrap
+echo 'LB_PARENT_MIRROR_CHROOT="http://deb.debian.org/debian/"' >> config/chroot
+echo 'LB_MIRROR_CHROOT="http://deb.debian.org/debian/"' >> config/chroot
 
 # 4. 写入 archive override 文件（chroot + binary 两阶段都覆盖）
 sudo mkdir -p config/archives
