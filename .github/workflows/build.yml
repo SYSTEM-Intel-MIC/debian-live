@@ -21,13 +21,15 @@ jobs:
       - name: Configure live-build
         run: |
           # 不依赖 auto/ 脚本，直接在 workflow 里配置
+          # 强制使用 Debian 模式（Ubuntu 装的 live-build 默认是 Ubuntu 模式，会用错误的镜像）
           sudo lb config \
             --distribution bookworm \
             --architectures amd64 \
             --linux-flavours amd64 \
             --bootappend-live "boot=live components splash" \
             --binary-images iso-hybrid \
-            --source false
+            --source false \
+            --mode debian
 
       - name: Configure apt mirrors
         run: |
