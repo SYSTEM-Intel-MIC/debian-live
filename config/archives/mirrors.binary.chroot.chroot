@@ -1,0 +1,4 @@
+deb http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware
+deb http://mirrors.aliyun.com/debian-security/ bookworm-security main contrib non-free non-free-firmware
+deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware
+deb http://mirrors.tuna.tsinghua.edu.cn/debian-security/ bookworm-security main contrib non-free non-free-firmware

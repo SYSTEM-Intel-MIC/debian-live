@@ -1,0 +1,89 @@
+name: Build Custom Debian Live ISO
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install live-build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y live-build curl
+
+      - name: Generate live-build config
+        run: |
+          sudo lb config \
+            --distribution bookworm \
+            --architectures amd64 \
+            --linux-flavours amd64 \
+            --bootappend-live "boot=live components quiet splash" \
+            --binary-images iso-hybrid \
+            --source false
+
+      - name: Override apt mirrors to Aliyun + Tsinghua
+        run: |
+          MIRROR="http://mirrors.aliyun.com/debian/"
+          SECURITY="http://mirrors.aliyun.com/debian-security/"
+          TUNA="http://mirrors.tuna.tsinghua.edu.cn/debian/"
+          TUNA_SEC="http://mirrors.tuna.tsinghua.edu.cn/debian-security/"
+
+          tee lb/apt/preferences > /dev/null << 'PREF'
+          Package: *
+          Pin: release o=Debian,a=bookworm
+          Pin-Priority: 1000
+          PREF
+
+          tee lb/config/archives/mirrors.binary.chroot > /dev/null << 'EOF'
+          deb http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware
+          deb http://mirrors.aliyun.com/debian-security/ bookworm-security main contrib non-free non-free-firmware
+          deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware
+          deb http://mirrors.tuna.tsinghua.edu.cn/debian-security/ bookworm-security main contrib non-free non-free-firmware
+          EOF
+
+          cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.chroot.chroot
+          cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.live
+
+          # 覆盖 bootstrap 和 chroot 阶段
+          sudo sed -i "s|LB_MIRROR_CHROOT=.*|LB_MIRROR_CHROOT=\"$MIRROR\"|" lb/config/bootstrap
+          sudo sed -i "s|LB_MIRROR_CHROOT_SECURITY=.*|LB_MIRROR_CHROOT_SECURITY=\"$SECURITY\"|" lb/config/bootstrap
+
+      - name: Add minimal packages
+        run: |
+          mkdir -p config/package-lists
+          cat > config/package-lists/standard.list.chroot << 'EOF'
+          # 下述包仅在 lb build 时安装到 live 系统
+          openssh-server
+          # standard 任务由 LB_PACKAGES_LISTS="standard" 覆盖，无需重复
+          EOF
+
+          cat >> config/package-lists/standard.list.chroot << 'EOF'
+
+          # kernel 由 live-build 自动处理，此处留空仅保留注释
+          EOF
+
+      - name: Build the ISO
+        run: |
+          sudo lb build 2>&1 | tail -50
+          ls -lh *.hybrid.iso 2>/dev/null || ls -lh *.iso 2>/dev/null || find . -name "*.iso" -ls
+
+      - name: Find and upload ISO artifact
+        id: find-iso
+        run: |
+          ISO=$(find . -name "*.hybrid.iso" -o -name "*.iso" | grep -v "stage\|source" | head -1)
+          echo "iso_path=$ISO" >> $GITHUB_OUTPUT
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        if: steps.find-iso.outputs.iso_path != ''
+        with:
+          name: custom-debian-live-amd64
+          path: ${{ steps.find-iso.outputs.iso_path }}
+          retention-days: 7
