@@ -34,6 +34,9 @@ jobs:
           SECURITY="http://mirrors.aliyun.com/debian-security/"
 
           # lb/ 目录由 sudo lb config 创建，文件属 root，全部操作需要 sudo
+          sudo mkdir -p lb/config/archives
+
+          # apt 偏好
           sudo tee /etc/apt/preferences > /dev/null << 'PREF'
           Package: *
           Pin: release o=Debian,a=bookworm
