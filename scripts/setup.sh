@@ -18,10 +18,10 @@ echo 'LB_SECURITY="false"' >> config/chroot
 
 # 3. 覆盖所有镜像变量（三个 config 文件都要改）
 # defaults.sh 硬编码了 ftp.debian.org，必须显式覆盖
-echo 'LB_MIRROR_BOOTSTRAP="http://deb.debian.org/debian/"' >> config/bootstrap
-echo 'LB_PARENT_MIRROR_BOOTSTRAP="http://deb.debian.org/debian/"' >> config/bootstrap
-echo 'LB_PARENT_MIRROR_CHROOT="http://deb.debian.org/debian/"' >> config/chroot
-echo 'LB_MIRROR_CHROOT="http://deb.debian.org/debian/"' >> config/chroot
+echo 'LB_MIRROR_BOOTSTRAP="http://deb.debian.org/debian"' >> config/bootstrap
+echo 'LB_PARENT_MIRROR_BOOTSTRAP="http://deb.debian.org/debian"' >> config/bootstrap
+echo 'LB_PARENT_MIRROR_CHROOT="http://deb.debian.org/debian"' >> config/chroot
+echo 'LB_MIRROR_CHROOT="http://deb.debian.org/debian"' >> config/chroot
 
 # 4. 写入 archive override 文件（chroot + binary 两阶段都覆盖）
 sudo mkdir -p config/archives
