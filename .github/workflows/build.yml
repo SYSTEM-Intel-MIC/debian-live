@@ -26,8 +26,7 @@ jobs:
             --linux-flavours amd64 \
             --bootappend-live "boot=live components splash" \
             --binary-images iso-hybrid \
-            --source false \
-            --nointeractive
+            --source false
 
       - name: Override apt mirrors to Aliyun + Tsinghua
         run: |
