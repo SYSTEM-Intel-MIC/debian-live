@@ -19,22 +19,20 @@ echo 'LB_FIRMWARE_CHROOT="false"' >> config/chroot
 
 # 3. 覆盖所有镜像变量（三个 config 文件都要改）
 # defaults.sh 硬编码了 ftp.debian.org，必须显式覆盖
-echo 'LB_MIRROR_BOOTSTRAP="http://deb.debian.org/debian"' >> config/bootstrap
-echo 'LB_PARENT_MIRROR_BOOTSTRAP="http://deb.debian.org/debian"' >> config/bootstrap
-echo 'LB_PARENT_MIRROR_CHROOT="http://deb.debian.org/debian"' >> config/chroot
-echo 'LB_MIRROR_CHROOT="http://deb.debian.org/debian"' >> config/chroot
+echo 'LB_MIRROR_BOOTSTRAP="http://deb.debian.org/debian/"' >> config/bootstrap
+echo 'LB_PARENT_MIRROR_BOOTSTRAP="http://deb.debian.org/debian/"' >> config/bootstrap
+echo 'LB_PARENT_MIRROR_CHROOT="http://deb.debian.org/debian/"' >> config/chroot
+echo 'LB_MIRROR_CHROOT="http://deb.debian.org/debian/"' >> config/chroot
 
-# 4. 写入 archive override 文件（chroot + binary 两阶段都覆盖）
+# 4. 写入 archive override 文件
+# lb_chroot_archives 只识别 *.list* 和 *.pref* 文件
+# 必须命名为 *.list.chroot 才能被复制到 chroot/etc/apt/sources.list.d/
 sudo mkdir -p config/archives
-cat > config/archives/mirrors.chroot << 'EOF'
+cat > config/archives/mirrors.list.chroot << 'EOF'
 deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
 EOF
-cp config/archives/mirrors.chroot config/archives/mirrors.binary.chroot
-cp config/archives/mirrors.chroot config/archives/mirrors.chroot.chroot
-cp config/archives/mirrors.chroot config/archives/mirrors.binary.live
-cp config/archives/mirrors.chroot config/archives/mirrors.binary.chroot.chroot
 
 echo "=== 验证 ==="
 ls -la config/archives/
-cat config/archives/mirrors.chroot
+cat config/archives/mirrors.list.chroot
 
