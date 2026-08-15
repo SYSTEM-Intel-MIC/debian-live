@@ -15,6 +15,7 @@ sudo lb config \
 # lb_chroot_apt / lb_chroot_archives 读取 config/chroot 里的 LB_SECURITY 来决定是否加 security 源
 echo 'LB_SECURITY="false"' >> config/bootstrap
 echo 'LB_SECURITY="false"' >> config/chroot
+echo 'LB_FIRMWARE_CHROOT="false"' >> config/chroot
 
 # 3. 覆盖所有镜像变量（三个 config 文件都要改）
 # defaults.sh 硬编码了 ftp.debian.org，必须显式覆盖
