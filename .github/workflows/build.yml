@@ -20,8 +20,7 @@ jobs:
 
       - name: Configure live-build and mirrors
         run: |
-          # 在同一个 bash 进程里顺序执行：lb config 之后立即写入 archives
-          # 这样 lb config 不会清空后面写入的内容
+          # 在同一个 bash 进程里执行：lb config 之后立即写入 archives
           bash -c '
             sudo lb config \
               --distribution bookworm \
@@ -32,35 +31,38 @@ jobs:
               --source false \
               --mode debian
 
-            # lb config 完成后立即写入 archives（同一进程，不会被清空）
-            sudo tee lb/config/archives/mirrors.binary.chroot > /dev/null << '\''EOF'\''
+            # lb config 完成后立即写入 archives 覆盖镜像
+            # 路径是 config/archives/（lb config 生成的目录），不是 lb/config/archives/
+            sudo mkdir -p config/archives
+
+            sudo tee config/archives/mirrors.binary.chroot > /dev/null << '\''EOF'\''
           deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
           deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
           EOF
 
-            sudo tee lb/config/archives/mirrors.binary.chroot.chroot > /dev/null << '\''EOF'\''
+            sudo tee config/archives/mirrors.binary.chroot.chroot > /dev/null << '\''EOF'\''
           deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
           deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
           EOF
 
-            sudo tee lb/config/archives/mirrors.binary.live > /dev/null << '\''EOF'\''
+            sudo tee config/archives/mirrors.binary.live > /dev/null << '\''EOF'\''
           deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
           deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
           EOF
 
             echo "Archives written:"
-            ls -la lb/config/archives/
+            ls -la config/archives/
           '
 
       - name: Add SSH package
         run: |
           mkdir -p config/package-lists
           echo "openssh-server" > config/package-lists/ssh.list.chroot
-          sudo cp -r config/package-lists lb/config/
+          sudo cp -r config/package-lists lb/config/ 2>/dev/null || true
 
       - name: Build ISO
         run: |
-          sudo lb build --debug 2>&1
+          sudo lb build 2>&1
           EXIT_CODE=$?
           echo "Build exit code: $EXIT_CODE"
           find . -name "*.iso" -ls 2>/dev/null || echo "No ISO found"
