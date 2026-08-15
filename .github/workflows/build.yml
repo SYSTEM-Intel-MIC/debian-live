@@ -18,31 +18,39 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y live-build xorriso
 
-      - name: Generate live-build config
+      - name: Configure live-build and mirrors
         run: |
-          # 先跑 lb config，生成目录结构
-          sudo lb config \
-            --distribution bookworm \
-            --architectures amd64 \
-            --linux-flavours amd64 \
-            --bootappend-live "boot=live components splash" \
-            --binary-images iso-hybrid \
-            --source false \
-            --mode debian
+          # 在同一个 bash 进程里顺序执行：lb config 之后立即写入 archives
+          # 这样 lb config 不会清空后面写入的内容
+          bash -c '
+            sudo lb config \
+              --distribution bookworm \
+              --architectures amd64 \
+              --linux-flavours amd64 \
+              --bootappend-live "boot=live components splash" \
+              --binary-images iso-hybrid \
+              --source false \
+              --mode debian
 
-      - name: Override apt mirrors
-        run: |
-          # lb config 之后才能写入 archives 文件
-          # 修复 security.debian.org 路径：lb config 默认生成 bookworm/updates（404），正确是 bookworm-security
-          sudo sed -i 's|http://security.debian.org/debian-security bookworm/updates|http://security.debian.org/debian-security bookworm-security main|g' config/bootstrap
-          sudo sed -i 's|http://security.debian.org/debian-security bookworm/updates|http://security.debian.org/debian-security bookworm-security main|g' config/chroot
-          sudo sed -i 's|http://security.debian.org/debian-security bookworm/updates|http://security.debian.org/debian-security bookworm-security main|g' config/binary
+            # lb config 完成后立即写入 archives（同一进程，不会被清空）
+            sudo tee lb/config/archives/mirrors.binary.chroot > /dev/null << '\''EOF'\''
+          deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
+          deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
+          EOF
 
-          # 同时写入 archive override 文件
-          printf 'deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware\ndeb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware\n' \
-            | sudo tee lb/config/archives/mirrors.binary.chroot > /dev/null
-          cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.chroot.chroot
-          cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.live
+            sudo tee lb/config/archives/mirrors.binary.chroot.chroot > /dev/null << '\''EOF'\''
+          deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
+          deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
+          EOF
+
+            sudo tee lb/config/archives/mirrors.binary.live > /dev/null << '\''EOF'\''
+          deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
+          deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
+          EOF
+
+            echo "Archives written:"
+            ls -la lb/config/archives/
+          '
 
       - name: Add SSH package
         run: |
@@ -55,7 +63,6 @@ jobs:
           sudo lb build --debug 2>&1
           EXIT_CODE=$?
           echo "Build exit code: $EXIT_CODE"
-          echo "=== ISO files ==="
           find . -name "*.iso" -ls 2>/dev/null || echo "No ISO found"
           exit $EXIT_CODE
 
