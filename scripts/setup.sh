@@ -17,7 +17,11 @@ sudo lb config \
 echo 'LB_SECURITY="false"' >> config/bootstrap
 echo 'LB_SECURITY="false"' >> config/chroot
 
-# 3. 写入 archive override 文件（chroot + binary 两阶段都覆盖）
+# 3. 覆盖 bootstrap 镜像（defaults.sh 里硬编码了 ftp.debian.org）
+echo 'LB_MIRROR_BOOTSTRAP="http://deb.debian.org/debian/"' >> config/bootstrap
+echo 'LB_PARENT_MIRROR_BOOTSTRAP="http://deb.debian.org/debian/"' >> config/bootstrap
+
+# 4. 写入 archive override 文件（chroot + binary 两阶段都覆盖）
 sudo mkdir -p config/archives
 cat > config/archives/mirrors.chroot << 'EOF'
 deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
@@ -30,3 +34,4 @@ cp config/archives/mirrors.chroot config/archives/mirrors.binary.chroot.chroot
 echo "=== 验证 ==="
 ls -la config/archives/
 cat config/archives/mirrors.chroot
+
