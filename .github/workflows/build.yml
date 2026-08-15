@@ -13,13 +13,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install live-build
+      - name: Install live-build and tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y live-build
+          sudo apt-get install -y live-build xorriso
 
-      - name: Generate live-build config
+      - name: Configure live-build
         run: |
+          # 不依赖 auto/ 脚本，直接在 workflow 里配置
           sudo lb config \
             --distribution bookworm \
             --architectures amd64 \
@@ -28,52 +29,51 @@ jobs:
             --binary-images iso-hybrid \
             --source false
 
-      - name: Override apt mirrors to Aliyun + Tsinghua (for local builds)
+      - name: Configure apt mirrors
         run: |
-          # 仅在本地构建时生效（GitHub Actions 节点在中国镜像访问受限）
-          # 如需在中国节点构建，请取消注释下面的源配置
+          # 镜像配置（GitHub Actions 节点可访问的源）
+          # 中国节点改为阿里云/清华源
+          sudo mkdir -p lb/config/archives
 
-          # MIRROR="http://mirrors.aliyun.com/debian/"
-          # SECURITY="http://mirrors.aliyun.com/debian-security/"
-          #
-          # sudo mkdir -p lb/config/archives
-          # printf 'deb %s bookworm main contrib non-free non-free-firmware\ndeb %s bookworm-security main contrib non-free non-free-firmware\n' \
-          #   "$MIRROR" "$SECURITY" | sudo tee lb/config/archives/mirrors.binary.chroot > /dev/null
-          # cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.chroot.chroot
-          # cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.live
-          echo "Using default Debian mirrors (GitHub Actions runner accessible)"
+          printf 'deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware\ndeb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware\n' \
+            | sudo tee lb/config/archives/mirrors.binary.chroot > /dev/null
 
-      - name: Add SSH package list
+          cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.chroot.chroot
+          cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.live
+
+      - name: Add SSH package
         run: |
           mkdir -p config/package-lists
           echo "openssh-server" > config/package-lists/ssh.list.chroot
+          sudo cp -r config/package-lists lb/config/
 
-      - name: Copy repo config into live-build tree
+      - name: Build ISO
         run: |
-          sudo cp -r config/package-lists lb/config/ 2>/dev/null || true
+          # 直接运行构建命令，保留所有输出
+          sudo lb build --debug 2>&1
+          EXIT_CODE=$?
+          echo "Build exit code: $EXIT_CODE"
+          echo ""
+          echo "=== Files in current directory ==="
+          ls -lh
+          echo ""
+          echo "=== ISO files ==="
+          find . -name "*.iso" -ls 2>/dev/null || echo "No ISO found"
+          exit $EXIT_CODE
 
-      - name: Build the ISO
-        run: |
-          # 不用 tail，全部日志都保留，方便调试
-          sudo lb build
-          echo "--- Build exit code: $? ---"
-
-      - name: Find ISO artifact
+      - name: Find ISO
         id: find-iso
         run: |
-          # 查找 ISO 文件（多种命名方式）
-          ISO=$(find . -name "*.hybrid.iso" -o -name "*.iso" | grep -v "stage\|source" | head -1)
+          ISO=$(find . -name "*.hybrid.iso" -o -name "*.iso" 2>/dev/null | grep -v "stage\|source" | grep -v "chroot" | head -1)
           echo "iso_path=$ISO" >> $GITHUB_OUTPUT
-          echo "Found ISO: $ISO"
+          echo "ISO=$ISO"
           if [ -z "$ISO" ]; then
-            echo "ERROR: No ISO file found!"
-            echo "Contents of current directory:"
-            ls -lh
-            echo "Contents of chroot stage:"
-            ls -lh chroot 2>/dev/null || echo "(chroot dir not found)"
+            echo "No ISO found in current directory"
+            find . -type f -name "*.iso" 2>/dev/null
+            ls -la *.iso 2>/dev/null || echo "No iso files"
           fi
 
-      - name: Upload ISO artifact
+      - name: Upload ISO
         uses: actions/upload-artifact@v4
         if: steps.find-iso.outputs.iso_path != ''
         with:

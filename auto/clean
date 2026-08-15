@@ -1,4 +1,2 @@
 #!/bin/sh
-set -e
-rm -f auto/clean
-echo "Clean completed at: $(date)"
+exit 0
