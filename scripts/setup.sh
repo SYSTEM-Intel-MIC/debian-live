@@ -13,7 +13,7 @@ sudo lb config \
 
 # 2. 直接在 config/bootstrap 里覆盖所有镜像变量
 # debootstrap 使用 debian suite 格式：http://host suite
-# security.debian.org 的正确 suite 是 bookworm-security（不是 bookworm/updates）
+# security.debian.org 正确的 suite 是 bookworm-security（不是 bookworm/updates）
 cat >> config/bootstrap << 'EOF'
 
 # ---- 镜像覆盖（由 setup.sh 自动生成）----
@@ -26,6 +26,8 @@ LB_PARENT_MIRROR_BINARY_SECURITY="http://security.debian.org/debian-security/"
 LB_MIRROR_BINARY="http://deb.debian.org/debian/"
 LB_MIRROR_BINARY_SECURITY="http://security.debian.org/debian-security/"
 LB_MIRROR_BOOTSTRAP="http://deb.debian.org/debian/"
+# 关键！security suite 必须是 bookworm-security（不是 bookworm/updates）
+LB_PARENT_SECURITY_DISTRIBUTION="bookworm-security"
 EOF
 
 # 3. 写入 archive override 文件（覆盖 binary 阶段的镜像）
