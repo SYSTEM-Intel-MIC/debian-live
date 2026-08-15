@@ -38,8 +38,8 @@ jobs:
           printf 'deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware\ndeb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware\n' \
             | sudo tee lb/config/archives/mirrors.binary.chroot > /dev/null
 
-          cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.chroot.chroot
-          cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.live
+          sudo cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.chroot.chroot
+          sudo cp lb/config/archives/mirrors.binary.chroot lb/config/archives/mirrors.binary.live
 
       - name: Add SSH package
         run: |
