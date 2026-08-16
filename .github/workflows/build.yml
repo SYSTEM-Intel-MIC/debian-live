@@ -23,10 +23,12 @@ jobs:
           chmod +x scripts/setup.sh
           sudo scripts/setup.sh
 
-      - name: Add SSH package
+      - name: Add package lists (SSH + bootloader)
         run: |
           mkdir -p config/package-lists
           echo "openssh-server" > config/package-lists/ssh.list.chroot
+          # syslinux 提供 isolinux.bin, vesamenu.c32 等引导文件
+          echo "syslinux syslinux-common" > config/package-lists/bootloader.list.chroot
           sudo cp -r config/package-lists lb/config/ 2>/dev/null || true
 
       - name: Patch live-build to skip Contents-amd64.gz
