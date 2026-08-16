@@ -31,12 +31,12 @@ jobs:
 
       - name: Patch live-build to skip Contents-amd64.gz (404 on Debian mirrors)
         run: |
-          # Debian 已从官方源下架 Contents-amd64.gz，需 patch 掉下载逻辑
-          SCRIPT="/usr/share/live/build/scripts/build/chroot_linux-image"
-          if [ -f "$SCRIPT" ]; then
-            sudo sed -i 's|wget.*Contents-amd64\.gz.*$|# PATCHED: Contents-amd64.gz unavailable|g' "$SCRIPT"
-            echo "Patched $SCRIPT"
-          fi
+          SCRIPT="/usr/lib/live/build/lb_chroot_linux-image"
+          echo "Patching $SCRIPT"
+          grep -n "Contents.*\.gz" "$SCRIPT"
+          # 注释掉下载 Contents-amd64.gz 的两行
+          sudo sed -i 's|^[[:space:]]*wget.*Contents-\${LB_ARCHITECTURES}\.gz|# PATCHED: Contents file unavailable|g' "$SCRIPT"
+          grep -n "Contents.*\.gz\|PATCHED" "$SCRIPT"
 
       - name: Build ISO
         run: |
