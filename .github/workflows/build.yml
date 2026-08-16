@@ -23,6 +23,20 @@ jobs:
           chmod +x scripts/setup.sh
           sudo scripts/setup.sh
 
+      - name: Copy real isolinux binaries to custom bootloaders dir
+        run: |
+          # Ubuntu 24.04 puts isolinux files in /usr/lib/ISOLINUX/ (not /usr/lib/syslinux/)
+          # live-build's internal bootloaders dir has broken symlinks pointing to /usr/lib/syslinux/
+          # Solution: put REAL files (dereferenced) in config/bootloaders/isolinux/
+          # live-build prefers config/bootloaders/ over internal system dir
+          sudo mkdir -p config/bootloaders/isolinux
+          sudo cp -L /usr/lib/ISOLINUX/isolinux.bin config/bootloaders/isolinux/
+          sudo cp -L /usr/lib/ISOLINUX/vesamenu.c32 config/bootloaders/isolinux/
+          sudo cp -L /usr/lib/syslinux/modules/bios/vesamenu.c32 config/bootloaders/isolinux/ 2>/dev/null || true
+          sudo cp -L /usr/lib/ISOLINUX/isohdpfx.bin config/bootloaders/isolinux/
+          echo "=== Custom bootloaders ==="
+          ls -la config/bootloaders/isolinux/
+
       - name: Add SSH package
         run: |
           mkdir -p config/package-lists
@@ -33,36 +47,6 @@ jobs:
         run: |
           chmod +x scripts/patch-contents.py
           sudo python3 scripts/patch-contents.py
-
-      - name: Fix isolinux symlinks inside chroot (Ubuntu 24.04 path mismatch)
-        run: |
-          # Create chroot hook to fix broken isolinux symlinks
-          # isolinux package puts files in /usr/lib/ISOLINUX/ but live-build expects /usr/lib/syslinux/
-          sudo mkdir -p config/hooks/normal
-          python3 - << 'PYEOF'
-          hook = """#!/bin/sh
-          # Fix isolinux.bin symlinks for Ubuntu 24.04
-          set -e
-          echo "Fix-isolinux: creating symlinks..."
-          if [ -f /usr/lib/ISOLINUX/isolinux.bin ]; then
-              mkdir -p /usr/lib/syslinux
-              ln -sf /usr/lib/ISOLINUX/isolinux.bin /usr/lib/syslinux/isolinux.bin
-              echo "  /usr/lib/syslinux/isolinux.bin -> /usr/lib/ISOLINUX/isolinux.bin"
-          fi
-          if [ -f /usr/lib/syslinux/modules/bios/vesamenu.c32 ]; then
-              mkdir -p /usr/lib/syslinux
-              ln -sf /usr/lib/syslinux/modules/bios/vesamenu.c32 /usr/lib/syslinux/vesamenu.c32
-              echo "  /usr/lib/syslinux/vesamenu.c32 -> /usr/lib/syslinux/modules/bios/vesamenu.c32"
-          fi
-          echo "Fix-isolinux: done"
-          """
-          with open("config/hooks/normal/fix-isolinux.hook.chroot", "w") as f:
-              f.write(hook)
-          import os
-          os.chmod("config/hooks/normal/fix-isolinux.hook.chroot", 0o755)
-          print("Hook written")
-          PYEOF
-          ls -la config/hooks/normal/
 
       - name: Build ISO
         run: |
