@@ -29,39 +29,10 @@ jobs:
           echo "openssh-server" > config/package-lists/ssh.list.chroot
           sudo cp -r config/package-lists lb/config/ 2>/dev/null || true
 
-      - name: Patch live-build: skip Contents-amd64.gz (Debian removed it, always 404)
+      - name: Patch live-build to skip Contents-amd64.gz
         run: |
-          SCRIPT="/usr/lib/live/build/lb_chroot_linux-image"
-          python3 - << 'PYEOF'
-          import re
-          path = "/usr/lib/live/build/lb_chroot_linux-image"
-          with open(path) as f:
-              content = f.read()
-          # 把 mkdir -p cache/contents.chroot 改成 mkdir + touch（空文件，awk 读出来为空，固件包列表为空）
-          content = content.replace(
-              "mkdir -p cache/contents.chroot",
-              "mkdir -p cache/contents.chroot && touch cache/contents.chroot/contents.${LB_PARENT_DISTRIBUTION}.${LB_ARCHITECTURES}"
-          )
-          # 把 wget Contents 那一行注释掉
-          content = re.sub(
-              r'^(\s*)wget\s+\$\{WGET_OPTIONS\}\s+\$\{LB_PARENT_MIRROR_CHROOT\}/dists/\$\{LB_PARENT_DISTRIBUTION\}/Contents-\$\{LB_ARCHITECTURES\}\.gz.*$',
-              r'\1# PATCHED (Contents-amd64.gz unavailable): \g<0>',
-              content, flags=re.MULTILINE
-          )
-          content = re.sub(
-              r'^(\s*)wget\s+\{WGET_OPTIONS\}\s+\$\{LB_MIRROR_CHROOT\}/dists/\$\{LB_DISTRIBUTION\}/Contents-\$\{LB_ARCHITECTURES\}\.gz.*$',
-              r'\1# PATCHED (Contents-amd64.gz unavailable): \g<0>',
-              content, flags=re.MULTILINE
-          )
-          with open(path, 'w') as f:
-              f.write(content)
-          print("Patched successfully")
-          # 验证
-          with open(path) as f:
-              for i, line in enumerate(f, 1):
-                  if 'PATCHED' in line or 'touch cache' in line:
-                      print(f"  line {i}: {line.rstrip()}")
-          PYEOF
+          chmod +x scripts/patch-contents.py
+          sudo python3 scripts/patch-contents.py
 
       - name: Build ISO
         run: |
