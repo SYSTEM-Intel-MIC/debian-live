@@ -16,19 +16,26 @@ jobs:
       - name: Install live-build and tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y live-build xorriso
+          sudo apt-get install -y live-build xorriso isolinux
 
       - name: Configure live-build and mirrors
         run: |
           chmod +x scripts/setup.sh
           sudo scripts/setup.sh
 
-      - name: Add package lists (SSH + bootloader)
+      - name: Fix broken bootloader symlinks (isolinux.bin in wrong path on Ubuntu 24.04)
+        run: |
+          # Ubuntu 24.04 isolinux 包把 isolinux.bin 放在 /usr/lib/ISOLINUX/
+          # 但 live-build 的 bootloaders/isolinux/ 指向不存在的 /usr/lib/syslinux/
+          # 修复链接
+          sudo ln -sf /usr/lib/ISOLINUX/isolinux.bin /usr/lib/syslinux/isolinux.bin
+          sudo ln -sf /usr/lib/syslinux/modules/bios/vesamenu.c32 /usr/lib/syslinux/vesamenu.c32
+          ls -la /usr/lib/syslinux/isolinux.bin /usr/lib/syslinux/vesamenu.c32
+
+      - name: Add SSH package
         run: |
           mkdir -p config/package-lists
           echo "openssh-server" > config/package-lists/ssh.list.chroot
-          # syslinux 提供 isolinux.bin, vesamenu.c32 等引导文件
-          echo "syslinux syslinux-common" > config/package-lists/bootloader.list.chroot
           sudo cp -r config/package-lists lb/config/ 2>/dev/null || true
 
       - name: Patch live-build to skip Contents-amd64.gz
