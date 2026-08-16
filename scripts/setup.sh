@@ -14,9 +14,11 @@ sudo lb config \
   --source false \
   --mode debian
 
+# 1b. 明确指定内核包名，跳过 Contents-amd64.gz 下载（该文件已从 Debian 官方源下架，返回 404）
+echo 'LB_LINUX_PACKAGES="linux-image-amd64"' | sudo tee -a config/chroot > /dev/null
+
 # 2. 覆盖镜像变量（sed 修改已有行，echo 追加缺失的）
 # 2a. bootstrap 镜像（defaults.sh 硬编码了 ftp.debian.org）
-# 如果变量存在就 sed 改，不存在就追加
 sed -i 's|^LB_MIRROR_BOOTSTRAP=.*|LB_MIRROR_BOOTSTRAP="http://deb.debian.org/debian"|' config/bootstrap 2>/dev/null || true
 sed -i 's|^LB_PARENT_MIRROR_BOOTSTRAP=.*|LB_PARENT_MIRROR_BOOTSTRAP="http://deb.debian.org/debian"|' config/bootstrap 2>/dev/null || true
 grep -q "^LB_MIRROR_BOOTSTRAP=" config/bootstrap || echo 'LB_MIRROR_BOOTSTRAP="http://deb.debian.org/debian"' >> config/bootstrap
@@ -25,7 +27,6 @@ grep -q "^LB_PARENT_MIRROR_BOOTSTRAP=" config/bootstrap || echo 'LB_PARENT_MIRRO
 # 2b. chroot 镜像（sed 直接改已有值）
 sed -i 's|^LB_PARENT_MIRROR_CHROOT=.*|LB_PARENT_MIRROR_CHROOT="http://deb.debian.org/debian"|' config/chroot 2>/dev/null || true
 sed -i 's|^LB_MIRROR_CHROOT=.*|LB_MIRROR_CHROOT="http://deb.debian.org/debian"|' config/chroot 2>/dev/null || true
-# 追加缺失的变量
 grep -q "^LB_PARENT_MIRROR_CHROOT=" config/chroot || echo 'LB_PARENT_MIRROR_CHROOT="http://deb.debian.org/debian"' >> config/chroot
 grep -q "^LB_MIRROR_CHROOT=" config/chroot || echo 'LB_MIRROR_CHROOT="http://deb.debian.org/debian"' >> config/chroot
 
@@ -43,7 +44,7 @@ EOF
 
 echo "=== 验证 ==="
 echo "--- config/chroot 关键变量 ---"
-grep -E "^LB_(PARENT_)?MIRROR.*CHROOT|^LB_SECURITY|^LB_FIRMWARE" config/chroot | grep -v "^#"
+grep -E "^LB_(PARENT_)?MIRROR.*CHROOT|^LB_SECURITY|^LB_FIRMWARE|^LB_LINUX_PACKAGES" config/chroot | grep -v "^#"
 echo "--- archives/ ---"
 ls config/archives/
 cat config/archives/mirrors.list.chroot
