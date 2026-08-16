@@ -29,6 +29,15 @@ jobs:
           echo "openssh-server" > config/package-lists/ssh.list.chroot
           sudo cp -r config/package-lists lb/config/ 2>/dev/null || true
 
+      - name: Patch live-build to skip Contents-amd64.gz (404 on Debian mirrors)
+        run: |
+          # Debian 已从官方源下架 Contents-amd64.gz，需 patch 掉下载逻辑
+          SCRIPT="/usr/share/live/build/scripts/build/chroot_linux-image"
+          if [ -f "$SCRIPT" ]; then
+            sudo sed -i 's|wget.*Contents-amd64\.gz.*$|# PATCHED: Contents-amd64.gz unavailable|g' "$SCRIPT"
+            echo "Patched $SCRIPT"
+          fi
+
       - name: Build ISO
         run: |
           sudo lb build 2>&1
