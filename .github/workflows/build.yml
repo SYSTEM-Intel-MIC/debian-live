@@ -23,21 +23,45 @@ jobs:
           chmod +x scripts/setup.sh
           sudo scripts/setup.sh
 
-      - name: Pre-create fake Contents cache (Debian removed Contents-amd64.gz from mirrors)
-        run: |
-          # lb_chroot_linux-image 在 LB_FIRMWARE_CHROOT=true 时下载 Contents-amd64.gz
-          # 直接预建缓存目录 + 空文件，让 wget 认为已下载（-C - 续传模式会跳过已有文件）
-          sudo mkdir -p cache/contents.chroot
-          # 创建一个空的但格式正确的 Contents 文件（裸 grep 不会匹配到任何固件行，即空结果）
-          touch cache/contents.chroot/contents.bookworm.amd64
-          echo "=== 预建缓存文件 ==="
-          ls -la cache/contents.chroot/
-
       - name: Add SSH package
         run: |
           mkdir -p config/package-lists
           echo "openssh-server" > config/package-lists/ssh.list.chroot
           sudo cp -r config/package-lists lb/config/ 2>/dev/null || true
+
+      - name: Patch live-build: skip Contents-amd64.gz (Debian removed it, always 404)
+        run: |
+          SCRIPT="/usr/lib/live/build/lb_chroot_linux-image"
+          python3 - << 'PYEOF'
+          import re
+          path = "/usr/lib/live/build/lb_chroot_linux-image"
+          with open(path) as f:
+              content = f.read()
+          # 把 mkdir -p cache/contents.chroot 改成 mkdir + touch（空文件，awk 读出来为空，固件包列表为空）
+          content = content.replace(
+              "mkdir -p cache/contents.chroot",
+              "mkdir -p cache/contents.chroot && touch cache/contents.chroot/contents.${LB_PARENT_DISTRIBUTION}.${LB_ARCHITECTURES}"
+          )
+          # 把 wget Contents 那一行注释掉
+          content = re.sub(
+              r'^(\s*)wget\s+\$\{WGET_OPTIONS\}\s+\$\{LB_PARENT_MIRROR_CHROOT\}/dists/\$\{LB_PARENT_DISTRIBUTION\}/Contents-\$\{LB_ARCHITECTURES\}\.gz.*$',
+              r'\1# PATCHED (Contents-amd64.gz unavailable): \g<0>',
+              content, flags=re.MULTILINE
+          )
+          content = re.sub(
+              r'^(\s*)wget\s+\{WGET_OPTIONS\}\s+\$\{LB_MIRROR_CHROOT\}/dists/\$\{LB_DISTRIBUTION\}/Contents-\$\{LB_ARCHITECTURES\}\.gz.*$',
+              r'\1# PATCHED (Contents-amd64.gz unavailable): \g<0>',
+              content, flags=re.MULTILINE
+          )
+          with open(path, 'w') as f:
+              f.write(content)
+          print("Patched successfully")
+          # 验证
+          with open(path) as f:
+              for i, line in enumerate(f, 1):
+                  if 'PATCHED' in line or 'touch cache' in line:
+                      print(f"  line {i}: {line.rstrip()}")
+          PYEOF
 
       - name: Build ISO
         run: |
