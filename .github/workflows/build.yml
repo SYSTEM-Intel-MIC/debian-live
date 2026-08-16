@@ -25,14 +25,11 @@ jobs:
 
       - name: Copy real isolinux binaries to custom bootloaders dir
         run: |
-          # Ubuntu 24.04 puts isolinux files in /usr/lib/ISOLINUX/ (not /usr/lib/syslinux/)
-          # live-build's internal bootloaders dir has broken symlinks pointing to /usr/lib/syslinux/
-          # Solution: put REAL files (dereferenced) in config/bootloaders/isolinux/
-          # live-build prefers config/bootloaders/ over internal system dir
+          # Ubuntu 24.04: isolinux package puts isolinux.bin in /usr/lib/ISOLINUX/
+          # vesamenu.c32 is in /usr/lib/syslinux/modules/bios/ (from syslinux-common)
           sudo mkdir -p config/bootloaders/isolinux
           sudo cp -L /usr/lib/ISOLINUX/isolinux.bin config/bootloaders/isolinux/
-          sudo cp -L /usr/lib/ISOLINUX/vesamenu.c32 config/bootloaders/isolinux/
-          sudo cp -L /usr/lib/syslinux/modules/bios/vesamenu.c32 config/bootloaders/isolinux/ 2>/dev/null || true
+          sudo cp -L /usr/lib/syslinux/modules/bios/vesamenu.c32 config/bootloaders/isolinux/
           sudo cp -L /usr/lib/ISOLINUX/isohdpfx.bin config/bootloaders/isolinux/
           echo "=== Custom bootloaders ==="
           ls -la config/bootloaders/isolinux/
