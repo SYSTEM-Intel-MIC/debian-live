@@ -1,27 +1,4 @@
 #!/bin/sh
-# Fix broken isolinux.bin symlinks on Ubuntu 24.04
-# isolinux package puts files in /usr/lib/ISOLINUX/
-# but live-build's internal bootloaders dir symlinks point to /usr/lib/syslinux/
-set -e
+# Hook disabled - isolinux binaries are now provided via config/bootloaders/
+exit 0
 
-# Only fix if running inside chroot
-if [ ! -d /root ] && [ ! -d /chroot ]; then
-    echo "Fix-isolinux: not in chroot, skipping"
-    exit 0
-fi
-
-echo "Fix-isolinux: fixing isolinux binary symlinks..."
-
-# Ubuntu 24.04 isolinux puts isolinux.bin here
-if [ -f /usr/lib/ISOLINUX/isolinux.bin ] && [ ! -f /usr/lib/syslinux/isolinux.bin ]; then
-    ln -sf /usr/lib/ISOLINUX/isolinux.bin /usr/lib/syslinux/isolinux.bin
-    echo "  linked /usr/lib/syslinux/isolinux.bin → /usr/lib/ISOLINUX/isolinux.bin"
-fi
-
-# Ubuntu 24.04 vesamenu.c32 location
-if [ -f /usr/lib/syslinux/modules/bios/vesamenu.c32 ] && [ ! -f /usr/lib/syslinux/vesamenu.c32 ]; then
-    ln -sf /usr/lib/syslinux/modules/bios/vesamenu.c32 /usr/lib/syslinux/vesamenu.c32
-    echo "  linked /usr/lib/syslinux/vesamenu.c32 → /usr/lib/syslinux/modules/bios/vesamenu.c32"
-fi
-
-echo "Fix-isolinux: done"
