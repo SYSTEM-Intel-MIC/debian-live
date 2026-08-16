@@ -23,20 +23,21 @@ jobs:
           chmod +x scripts/setup.sh
           sudo scripts/setup.sh
 
+      - name: Pre-create fake Contents cache (Debian removed Contents-amd64.gz from mirrors)
+        run: |
+          # lb_chroot_linux-image 在 LB_FIRMWARE_CHROOT=true 时下载 Contents-amd64.gz
+          # 直接预建缓存目录 + 空文件，让 wget 认为已下载（-C - 续传模式会跳过已有文件）
+          sudo mkdir -p cache/contents.chroot
+          # 创建一个空的但格式正确的 Contents 文件（裸 grep 不会匹配到任何固件行，即空结果）
+          touch cache/contents.chroot/contents.bookworm.amd64
+          echo "=== 预建缓存文件 ==="
+          ls -la cache/contents.chroot/
+
       - name: Add SSH package
         run: |
           mkdir -p config/package-lists
           echo "openssh-server" > config/package-lists/ssh.list.chroot
           sudo cp -r config/package-lists lb/config/ 2>/dev/null || true
-
-      - name: Patch live-build to skip Contents-amd64.gz (404 on Debian mirrors)
-        run: |
-          SCRIPT="/usr/lib/live/build/lb_chroot_linux-image"
-          echo "Patching $SCRIPT"
-          grep -n "Contents.*\.gz" "$SCRIPT"
-          # 注释掉下载 Contents-amd64.gz 的两行
-          sudo sed -i 's|^[[:space:]]*wget.*Contents-\${LB_ARCHITECTURES}\.gz|# PATCHED: Contents file unavailable|g' "$SCRIPT"
-          grep -n "Contents.*\.gz\|PATCHED" "$SCRIPT"
 
       - name: Build ISO
         run: |
