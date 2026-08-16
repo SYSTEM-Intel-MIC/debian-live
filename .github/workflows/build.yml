@@ -23,15 +23,6 @@ jobs:
           chmod +x scripts/setup.sh
           sudo scripts/setup.sh
 
-      - name: Fix broken bootloader symlinks (isolinux.bin in wrong path on Ubuntu 24.04)
-        run: |
-          # Ubuntu 24.04 isolinux 包把 isolinux.bin 放在 /usr/lib/ISOLINUX/
-          # 但 live-build 的 bootloaders/isolinux/ 指向不存在的 /usr/lib/syslinux/
-          # 修复链接
-          sudo ln -sf /usr/lib/ISOLINUX/isolinux.bin /usr/lib/syslinux/isolinux.bin
-          sudo ln -sf /usr/lib/syslinux/modules/bios/vesamenu.c32 /usr/lib/syslinux/vesamenu.c32
-          ls -la /usr/lib/syslinux/isolinux.bin /usr/lib/syslinux/vesamenu.c32
-
       - name: Add SSH package
         run: |
           mkdir -p config/package-lists
@@ -42,6 +33,36 @@ jobs:
         run: |
           chmod +x scripts/patch-contents.py
           sudo python3 scripts/patch-contents.py
+
+      - name: Fix isolinux symlinks inside chroot (Ubuntu 24.04 path mismatch)
+        run: |
+          # Create chroot hook to fix broken isolinux symlinks
+          # isolinux package puts files in /usr/lib/ISOLINUX/ but live-build expects /usr/lib/syslinux/
+          sudo mkdir -p config/hooks/normal
+          python3 - << 'PYEOF'
+          hook = """#!/bin/sh
+          # Fix isolinux.bin symlinks for Ubuntu 24.04
+          set -e
+          echo "Fix-isolinux: creating symlinks..."
+          if [ -f /usr/lib/ISOLINUX/isolinux.bin ]; then
+              mkdir -p /usr/lib/syslinux
+              ln -sf /usr/lib/ISOLINUX/isolinux.bin /usr/lib/syslinux/isolinux.bin
+              echo "  /usr/lib/syslinux/isolinux.bin -> /usr/lib/ISOLINUX/isolinux.bin"
+          fi
+          if [ -f /usr/lib/syslinux/modules/bios/vesamenu.c32 ]; then
+              mkdir -p /usr/lib/syslinux
+              ln -sf /usr/lib/syslinux/modules/bios/vesamenu.c32 /usr/lib/syslinux/vesamenu.c32
+              echo "  /usr/lib/syslinux/vesamenu.c32 -> /usr/lib/syslinux/modules/bios/vesamenu.c32"
+          fi
+          echo "Fix-isolinux: done"
+          """
+          with open("config/hooks/normal/fix-isolinux.hook.chroot", "w") as f:
+              f.write(hook)
+          import os
+          os.chmod("config/hooks/normal/fix-isolinux.hook.chroot", 0o755)
+          print("Hook written")
+          PYEOF
+          ls -la config/hooks/normal/
 
       - name: Build ISO
         run: |
