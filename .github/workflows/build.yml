@@ -91,7 +91,7 @@ jobs:
       - name: Configure live-build
         run: |
           # 让 auto/config 使用仓库中的配置
-          sudo lb config 2>&1 | tail -10
+          sudo LB_AUTO_SRC=0 lb config 2>&1 | tail -10
           echo "=== lb config done ==="
           ls config/
 
