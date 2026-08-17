@@ -26,7 +26,7 @@ jobs:
           sudo rm -f /etc/apt/sources.list
           sudo rm -f /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
 
-          # 把本地密钥安装到系统 keyring（apt 用）
+          # 把本地密钥安装到 apt keyrings
           sudo mkdir -p /etc/apt/keyrings
           for keyring in \
             config/debian-archive-bookworm-automatic.gpg \
@@ -34,22 +34,20 @@ jobs:
             config/debian-archive-keyring.gpg; do
             if [ -f "$keyring" ]; then
               sudo cp "$keyring" /etc/apt/keyrings/$(basename "$keyring")
-              echo "Installed to apt keyrings: $keyring"
+              echo "Installed: $keyring"
             fi
           done
 
-          # 把完整密钥复制到 debootstrap 需要的路径
-          # debootstrap 读取 /usr/share/keyrings/debian-archive-keyring.gpg
+          # debootstrap 需要此路径的密钥
           sudo cp config/debian-archive-keyring.gpg /usr/share/keyrings/debian-archive-keyring.gpg
-          echo "Installed to debootstrap keyring: /usr/share/keyrings/debian-archive-keyring.gpg"
+          echo "Installed debootstrap keyring"
 
-          # 写入 Bookworm sources.list（使用 signed-by 指向本地密钥）
+          # 写入 Bookworm sources.list
           sudo tee /etc/apt/sources.list << 'EOF'
           deb [signed-by=/etc/apt/keyrings/debian-archive-bookworm-automatic.gpg] http://mirrors.aliyun.com/debian bookworm main contrib non-free non-free-firmware
           deb [signed-by=/etc/apt/keyrings/debian-archive-bookworm-security-automatic.gpg] http://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware
           EOF
 
-          # 清理第三方源
           sudo rm -f /etc/apt/sources.list.d/*.list 2>/dev/null || true
           echo "=== sources.list ==="
           cat /etc/apt/sources.list
@@ -72,31 +70,29 @@ jobs:
             2>&1 | tail -10
           lb --version
 
-      # ── 4. 设置 auto 脚本权限（重要！否则被忽略）─────────────────
-      - name: Make auto scripts executable
-        run: |
-          chmod +x auto/config auto/build auto/clean
-          ls -la auto/
-
-      # ── 5. 清理旧构建（只清理 lb 目录，不动 config/）────────────
+      # ── 4. 清理旧构建（保留 config/，只清 lb/）───────────────────
       - name: Clean previous build artifacts
         run: |
-          # 只清理 live-build 生成的文件，保留 config/（含密钥和镜像配置）
           sudo rm -rf lb/ .build/ stage/ cache/ *.iso *.log 2>/dev/null || true
-          echo "Cleaned lb/, .build/, stage/, cache/"
-          echo "config/ preserved:"
-          find config -type f | sort
+          echo "Cleaned (config/ preserved)"
 
-      # ── 6. 配置 live-build（通过 auto/config 脚本）──────────────
+      # ── 5. 配置 live-build ──────────────────────────────────────
       - name: Configure live-build
         run: |
-          # 让 auto/config 使用仓库中的配置
-          sudo LB_AUTO_SRC=0 lb config 2>&1 | tail -10
+          sudo lb config \
+            --distribution bookworm \
+            --architectures amd64 \
+            --linux-flavours amd64 \
+            --bootappend-live "boot=live components splash" \
+            --binary-images iso-hybrid \
+            --source false \
+            --zsync false \
+            --firmware-chroot false \
+            2>&1 | tail -5
           echo "=== lb config done ==="
-          ls config/
 
-      # ── 7. 确认镜像覆盖（lb config 可能已覆盖）──────────────────
-      - name: Ensure mirror overrides are in place
+      # ── 6. 覆盖镜像源变量 ───────────────────────────────────────
+      - name: Configure mirrors
         run: |
           MIRROR="http://mirrors.aliyun.com/debian"
           SECURITY="http://mirrors.aliyun.com/debian-security"
@@ -119,7 +115,7 @@ jobs:
           echo "=== Chroot mirrors ==="
           grep -E "^LB_.*MIRROR" config/chroot | grep -v "^#"
 
-      # ── 8. 写入 archive override（阿里云镜像）───────────────────
+      # ── 7. 写入 archive override ────────────────────────────────
       - name: Write archive override files
         run: |
           sudo mkdir -p config/archives
@@ -137,13 +133,13 @@ jobs:
           echo "=== Archives ==="
           ls config/archives/
 
-      # ── 9. 添加 SSH 包 ─────────────────────────────────────────
+      # ── 8. 添加 SSH 包 ─────────────────────────────────────────
       - name: Add SSH package
         run: |
           sudo mkdir -p config/package-lists
           echo "openssh-server" | sudo tee config/package-lists/ssh.list.chroot
 
-      # ── 10. SSH hook ────────────────────────────────────────────
+      # ── 9. SSH hook ─────────────────────────────────────────────
       - name: Add SSH hook
         run: |
           sudo mkdir -p config/hooks/live
@@ -156,7 +152,7 @@ jobs:
           EOF
           sudo chmod +x config/hooks/live/enable-ssh.hook.chroot
 
-      # ── 11. 构建 ISO ────────────────────────────────────────────
+      # ── 10. 构建 ISO ────────────────────────────────────────────
       - name: Build ISO
         id: build
         run: |
@@ -167,7 +163,7 @@ jobs:
           echo "Build finished: $(date), exit=$EXIT"
           exit $EXIT
 
-      # ── 12. 找 ISO ─────────────────────────────────────────────
+      # ── 11. 找 ISO ─────────────────────────────────────────────
       - name: Find ISO
         id: find-iso
         run: |
@@ -182,9 +178,10 @@ jobs:
           else
             echo "No ISO found"
             echo "iso_path=" >> $GITHUB_OUTPUT
+            find . -name "*.iso" 2>/dev/null
           fi
 
-      # ── 13. 上传 artifact ───────────────────────────────────────
+      # ── 12. 上传 artifact ───────────────────────────────────────
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4
         if: steps.find-iso.outputs.iso_path != ''
@@ -194,7 +191,7 @@ jobs:
           retention-days: 7
           compression-level: 0
 
-      # ── 14. 清理 ───────────────────────────────────────────────
+      # ── 13. 清理 ───────────────────────────────────────────────
       - name: Cleanup disk space
         if: always()
         run: |
