@@ -19,49 +19,39 @@ jobs:
       - name: Show disk space
         run: df -h /
 
-      # ── 2. 配置 Debian Bookworm 源 + 导入密钥 ──────────────────
-      - name: Setup Debian Bookworm apt sources
+      # ── 2. 配置 Debian Bookworm apt 源（用本地密钥，无外部下载）───
+      - name: Setup Debian Bookworm sources with local keyring
         run: |
           # 清理旧的 Ubuntu 源
           sudo rm -f /etc/apt/sources.list
           sudo rm -f /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
 
-          # 写入 Bookworm sources.list
-          sudo tee /etc/apt/sources.list << 'EOF'
-          deb http://mirrors.aliyun.com/debian bookworm main contrib non-free non-free-firmware
-          deb http://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware
-          EOF
-
-          # 下载并安装 Debian Bookworm 归档密钥（解决 NO_PUBKEY 问题）
-          wget -qO- https://ftp-master.metadata.org/ftp/distributions/Debian/repo/keyring/debian-archive-bookworm-automatic.asc \
-            | gpg --dearmor -o /tmp/debian-archive-bookworm.gpg 2>/dev/null || \
-          wget -qO- http://ftp.debian.org/debian/pool/main/d/debian-archive-keyring/debian-archive-keyring_2023.3_all.deb -o /tmp/keyring.deb
-
-          # 尝试用 deb 包方式安装（最可靠）
-          wget -q "http://ftp.debian.org/debian/pool/main/d/debian-archive-keyring/debian-archive-keyring_2023.3_all.deb" \
-            -O /tmp/keyring.deb 2>/dev/null && \
-            sudo dpkg -i /tmp/keyring.deb && echo "Keyring installed" || \
-            echo "Keyring install failed, trying manual import"
-
-          # 手动导入关键公钥（如果 deb 安装失败）
-          for key in \
-            "6ED0E7B82643E131" \
-            "78DBA3BC47EF2265" \
-            "F8D2585B8783D481" \
-            "54404762BBB6E853" \
-            "BDE6D2B9216EC7A8"; do
-            sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys "$key" 2>/dev/null || true
+          # 把本地密钥安装到系统 keyring
+          # bookworm 需要 automatic (含签名密钥) + security
+          for keyring in \
+            config/debian-archive-bookworm-automatic.gpg \
+            config/debian-archive-bookworm-security-automatic.gpg \
+            config/debian-archive-keyring.gpg; do
+            if [ -f "$keyring" ]; then
+              sudo cp "$keyring" /etc/apt/keyrings/debian-$(basename "$keyring")
+              echo "Copied $keyring"
+            fi
           done
 
+          # 写入 Bookworm sources.list（使用 signed-by 指向本地密钥，无网络依赖）
+          sudo tee /etc/apt/sources.list << 'EOF'
+          deb [signed-by=/etc/apt/keyrings/debian-debian-archive-bookworm-automatic.gpg] http://mirrors.aliyun.com/debian bookworm main contrib non-free non-free-firmware
+          deb [signed-by=/etc/apt/keyrings/debian-debian-archive-bookworm-security-automatic.gpg] http://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware
+          EOF
+
+          # 清理第三方源
+          sudo rm -f /etc/apt/sources.list.d/*.list 2>/dev/null || true
           cat /etc/apt/sources.list
 
       # ── 3. 更新 apt + 安装依赖 ──────────────────────────────────
-      - name: Install live-build and dependencies
+      - name: Update apt and install dependencies
         run: |
-          sudo apt-get update -y || {
-            # 备用：允许不安全仓库继续
-            sudo apt-get update -y --allow-insecure-repositories || true
-          }
+          sudo apt-get update -y
           sudo apt-get install -y --no-install-recommends \
             live-build \
             debootstrap \
@@ -80,9 +70,8 @@ jobs:
       - name: Clean previous build artifacts
         run: |
           sudo rm -rf config/archives lb/ .build/ stage/ cache/ *.iso *.log 2>/dev/null || true
-          chmod +x scripts/setup.sh
 
-      # ── 5. 运行 live-build 配置 ────────────────────────────────
+      # ── 5. 配置 live-build ──────────────────────────────────────
       - name: Configure live-build
         run: |
           sudo lb config \
@@ -98,20 +87,17 @@ jobs:
           echo "=== lb config done ==="
 
       # ── 6. 覆盖镜像源变量 ───────────────────────────────────────
-      - name: Configure mirrors in lb config files
+      - name: Configure mirrors
         run: |
           MIRROR="http://mirrors.aliyun.com/debian"
           SECURITY="http://mirrors.aliyun.com/debian-security"
 
-          # Bootstrap
           echo "LB_MIRROR_BOOTSTRAP=\"http://deb.debian.org/debian\"" | sudo tee -a config/bootstrap
           echo "LB_PARENT_MIRROR_BOOTSTRAP=\"http://deb.debian.org/debian\"" | sudo tee -a config/bootstrap
 
-          # Chroot（阿里云）
           echo "LB_MIRROR_CHROOT=\"$MIRROR/\"" | sudo tee -a config/chroot
           echo "LB_PARENT_MIRROR_CHROOT=\"$MIRROR/\"" | sudo tee -a config/chroot
 
-          # Binary（阿里云）
           echo "LB_MIRROR_BINARY=\"$MIRROR/\"" | sudo tee -a config/binary
           echo "LB_PARENT_MIRROR_BINARY=\"$MIRROR/\"" | sudo tee -a config/binary
           echo "LB_MIRROR_BINARY_SECURITY=\"$SECURITY/\"" | sudo tee -a config/binary
@@ -119,7 +105,7 @@ jobs:
           echo "=== Chroot mirrors ==="
           grep -E "^LB_.*MIRROR" config/chroot | grep -v "^#"
 
-      # ── 7. 写入 archive override 文件 ──────────────────────────
+      # ── 7. 写入 archive override ────────────────────────────────
       - name: Write archive override files
         run: |
           sudo mkdir -p config/archives
@@ -144,7 +130,7 @@ jobs:
           echo "openssh-server" | sudo tee config/package-lists/ssh.list.chroot
 
       # ── 9. SSH hook ─────────────────────────────────────────────
-      - name: Add SSH enable hook
+      - name: Add SSH hook
         run: |
           sudo mkdir -p config/hooks/live
           cat | sudo tee config/hooks/live/enable-ssh.hook.chroot << 'EOF'
@@ -155,7 +141,6 @@ jobs:
           echo "SSH configured"
           EOF
           sudo chmod +x config/hooks/live/enable-ssh.hook.chroot
-          echo "Hook created"
 
       # ── 10. 构建 ISO ────────────────────────────────────────────
       - name: Build ISO
@@ -182,7 +167,6 @@ jobs:
             ls -lh "$ISO"
           else
             echo "No ISO found"
-            find . -name "*.iso" 2>/dev/null
             echo "iso_path=" >> $GITHUB_OUTPUT
           fi
 
@@ -196,14 +180,14 @@ jobs:
           retention-days: 7
           compression-level: 0
 
-      # ── 13. 清理磁盘 ───────────────────────────────────────────
+      # ── 13. 清理 ───────────────────────────────────────────────
       - name: Cleanup disk space
         if: always()
         run: |
           sudo rm -rf lb/ stage/ cache/ .build/ 2>/dev/null || true
           df -h /
 
-  # ── 构建结果通知 ─────────────────────────────────────────────
+  # ── 结果通知 ─────────────────────────────────────────────────
   notify:
     needs: build
     runs-on: ubuntu-latest
@@ -214,6 +198,6 @@ jobs:
           if [[ "${{ needs.build.result }}" == "success" ]]; then
             echo "✅ 构建成功！ISO 已上传到 Artifacts"
           else
-            echo "❌ 构建失败，请查看上方日志排查"
+            echo "❌ 构建失败，请查看上方日志"
             exit 1
           fi
