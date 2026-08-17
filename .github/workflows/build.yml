@@ -39,9 +39,11 @@ jobs:
         run: |
           # 写入 Debian Bookworm sources.list（覆盖 Ubuntu 源）
           sudo tee /etc/apt/sources.list << 'SOURCES'
-          deb http://mirrors.aliyun.com/debian/debian/ bookworm main contrib non-free non-free-firmware
-          deb http://mirrors.aliyun.com/debian/debian-security/ bookworm-security main contrib non-free non-free-firmware
+          deb http://mirrors.aliyun.com/debian bookworm main contrib non-free non-free-firmware
+          deb http://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware
           SOURCES
+          # 清理其他源以防冲突
+          sudo rm -f /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
           cat /etc/apt/sources.list
 
       - name: Install live-build and dependencies
@@ -103,7 +105,6 @@ jobs:
           echo "LB_MIRROR_BINARY=\"$MIRROR\"" | sudo tee -a config/binary
           echo "LB_PARENT_MIRROR_BINARY=\"$MIRROR\"" | sudo tee -a config/binary
           echo "LB_MIRROR_BINARY_SECURITY=\"$SECURITY\"" | sudo tee -a config/binary
-          echo "LB_PARENT_MIRROR_BINARY_SECURITY=\"$SECURITY\"" | sudo tee -a config/binary
 
           # 禁用不必要的组件
           echo "LB_SECURITY=\"true\"" | sudo tee -a config/chroot
@@ -122,14 +123,14 @@ jobs:
 
           # chroot archive（debootstrap 用）
           cat | sudo tee config/archives/mirrors.list.chroot << 'EOF'
-          deb http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware
-          deb http://mirrors.aliyun.com/debian-security/ bookworm-security main contrib non-free non-free-firmware
+          deb http://mirrors.aliyun.com/debian bookworm main contrib non-free non-free-firmware
+          deb http://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware
           EOF
 
           # binary archive（最终 ISO 用）
           cat | sudo tee config/archives/mirrors.list.binary << 'EOF'
-          deb http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware
-          deb http://mirrors.aliyun.com/debian-security/ bookworm-security main contrib non-free non-free-firmware
+          deb http://mirrors.aliyun.com/debian bookworm main contrib non-free non-free-firmware
+          deb http://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware
           EOF
 
           echo "=== Archives ==="
