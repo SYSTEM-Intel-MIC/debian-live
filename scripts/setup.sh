@@ -19,15 +19,15 @@ sudo lb config \
 # 如果变量存在就 sed 改，不存在就追加
 sed -i 's|^LB_MIRROR_BOOTSTRAP=.*|LB_MIRROR_BOOTSTRAP="http://deb.debian.org/debian"|' config/bootstrap 2>/dev/null || true
 sed -i 's|^LB_PARENT_MIRROR_BOOTSTRAP=.*|LB_PARENT_MIRROR_BOOTSTRAP="http://deb.debian.org/debian"|' config/bootstrap 2>/dev/null || true
-grep -q "^LB_MIRROR_BOOTSTRAP=" config/bootstrap || echo 'LB_MIRROR_BOOTSTRAP="http://deb.debian.org/debian"' >> config/bootstrap
-grep -q "^LB_PARENT_MIRROR_BOOTSTRAP=" config/bootstrap || echo 'LB_PARENT_MIRROR_BOOTSTRAP="http://deb.debian.org/debian"' >> config/bootstrap
+          echo 'LB_MIRROR_BOOTSTRAP="http://deb.debian.org/debian"' >> config/bootstrap
+          echo 'LB_PARENT_MIRROR_BOOTSTRAP="http://deb.debian.org/debian"' >> config/bootstrap
 
 # 2b. chroot 镜像（sed 直接改已有值）
 sed -i 's|^LB_PARENT_MIRROR_CHROOT=.*|LB_PARENT_MIRROR_CHROOT="http://deb.debian.org/debian"|' config/chroot 2>/dev/null || true
 sed -i 's|^LB_MIRROR_CHROOT=.*|LB_MIRROR_CHROOT="http://deb.debian.org/debian"|' config/chroot 2>/dev/null || true
 # 追加缺失的变量
-grep -q "^LB_PARENT_MIRROR_CHROOT=" config/chroot || echo 'LB_PARENT_MIRROR_CHROOT="http://deb.debian.org/debian"' >> config/chroot
-grep -q "^LB_MIRROR_CHROOT=" config/chroot || echo 'LB_MIRROR_CHROOT="http://deb.debian.org/debian"' >> config/chroot
+          echo 'LB_PARENT_MIRROR_CHROOT="http://deb.debian.org/debian"' >> config/chroot
+          echo 'LB_MIRROR_CHROOT="http://deb.debian.org/debian"' >> config/chroot
 
 # 2c. 禁用 security 和 firmware 下载（sed 改已有值 + 追加缺失）
 sed -i 's|^LB_SECURITY=.*|LB_SECURITY="false"|' config/chroot 2>/dev/null || true
@@ -38,7 +38,7 @@ grep -q "^LB_FIRMWARE_CHROOT=" config/chroot || echo 'LB_FIRMWARE_CHROOT="false"
 # 3. 写入 archive override 文件（lb_chroot_archives 只识别 *.list* 文件）
 sudo mkdir -p config/archives
 cat > config/archives/mirrors.list.chroot << 'EOF'
-deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
+deb http://mirrors.aliyun.com/debian bookworm main contrib non-free non-free-firmware
 EOF
 
 echo "=== 验证 ==="
