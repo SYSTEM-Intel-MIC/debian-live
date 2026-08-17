@@ -18,14 +18,9 @@ env:
 
 jobs:
   build:
-    name: Build Debian Live ISO (${{ env.LB_DISTRIBUTION }}-${{ env.LB_ARCHITECTURE }})
+    name: Build Debian Live ISO (bookworm-amd64)
     runs-on: ubuntu-24.04
     timeout-minutes: 120
-
-    # 防止并发构建同一分支
-    concurrency:
-      group: build-${{ github.ref }}
-      cancel-in-progress: true
 
     steps:
       # ── 1. 环境准备 ────────────────────────────────────────────
