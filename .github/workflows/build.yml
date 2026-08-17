@@ -67,6 +67,7 @@ jobs:
             parted \
             dosfstools \
             gpg \
+            cpio \
             2>&1 | tail -10
           lb --version
 
@@ -88,6 +89,7 @@ jobs:
             --source false \
             --zsync false \
             --firmware-chroot false \
+            --debian-installer live \
             2>&1 | tail -5
           echo "=== lb config done ==="
 
@@ -152,7 +154,23 @@ jobs:
           EOF
           sudo chmod +x config/hooks/live/enable-ssh.hook.chroot
 
-      # ── 10. 构建 ISO ────────────────────────────────────────────
+      # ── 10. 配置 Debian Installer ────────────────────────────────
+      - name: Configure Debian installer
+        run: |
+          # 启用图形化安装界面
+          echo 'LB_DEBIAN_INSTALLER_GUI="true"' | sudo tee -a config/binary
+          echo 'LB_DEBIAN_INSTALLER_MODE="live"' | sudo tee -a config/binary
+          echo 'LB_DEBIAN_INSTALLER_PRESEED=""' | sudo tee -a config/binary
+
+          # 添加 installer 包
+          sudo mkdir -p config/package-lists
+          echo 'debian-installer' | sudo tee -a config/package-lists/installer.list.chroot
+          echo 'tasksel' | sudo tee -a config/package-lists/installer.list.chroot
+
+          echo "=== Installer config ==="
+          grep -E "DEBIAN_INSTALLER" config/binary | grep -v "^#" || true
+
+      # ── 11. 构建 ISO ────────────────────────────────────────────
       - name: Build ISO
         id: build
         run: |
@@ -163,7 +181,7 @@ jobs:
           echo "Build finished: $(date), exit=$EXIT"
           exit $EXIT
 
-      # ── 11. 找 ISO ─────────────────────────────────────────────
+      # ── 12. 找 ISO ─────────────────────────────────────────────
       - name: Find ISO
         id: find-iso
         run: |
@@ -181,17 +199,17 @@ jobs:
             find . -name "*.iso" 2>/dev/null
           fi
 
-      # ── 12. 上传 artifact ───────────────────────────────────────
+      # ── 13. 上传 artifact ───────────────────────────────────────
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4
         if: steps.find-iso.outputs.iso_path != ''
         with:
-          name: debian-live-${{ github.run_number }}
+          name: debian-live-${{ github.run_number }}-with-installer
           path: ${{ steps.find-iso.outputs.iso_path }}
           retention-days: 7
           compression-level: 0
 
-      # ── 13. 清理 ───────────────────────────────────────────────
+      # ── 14. 清理 ───────────────────────────────────────────────
       - name: Cleanup disk space
         if: always()
         run: |
