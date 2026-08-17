@@ -1,29 +1,14 @@
 #!/bin/sh
-# auto/config — live-build 配置生成
+# auto/config — live-build 清理钩子
 # 注意：不删除 config/ 目录，保留自定义配置文件
+# 注意：不要在这里调用 lb config！live-build 会自动用此脚本包装 lb config，
+#       如果此脚本调用 lb config 会导致无限递归（auto/config -> lb config -> auto/config -> ...）
 
 set -e
 
-DIST="${DIST:-bookworm}"
-ARCH="${ARCH:-amd64}"
-MIRROR="${MIRROR:-http://mirrors.aliyun.com/debian/}"
-
-echo "[auto/config] Running lb config..."
+echo "[auto/config] Cleaning up build artifacts..."
 
 # 只清理 live-build 自动生成的目录，不动 config/ 目录
-sudo rm -rf lb/ .build/ stage/ cache/
+rm -rf lb/ .build/ stage/ cache/
 
-# 生成基础配置
-sudo lb config \
-    --distribution "${DIST}" \
-    --architectures "${ARCH}" \
-    --linux-flavours amd64 \
-    --bootappend-live "boot=live components splash" \
-    --binary-images iso-hybrid \
-    --source false \
-    --zsync false \
-    --firmware-chroot false \
-    2>&1
-
-echo "[auto/config] lb config done."
-echo "[auto/config] config/ directory preserved."
+echo "[auto/config] Cleanup done. config/ directory preserved."
