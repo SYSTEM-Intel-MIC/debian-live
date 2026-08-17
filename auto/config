@@ -1,18 +1,17 @@
 #!/bin/sh
-# auto/config — live-build 配置生成脚本
-# 由 lb config 调用，或直接运行
+# auto/config — live-build 配置生成
+# 注意：不删除 config/ 目录，保留自定义配置文件
 
 set -e
 
-MIRROR="${MIRROR:-http://mirrors.aliyun.com/debian/}"
-SECURITY="${SECURITY:-http://mirrors.aliyun.com/debian-security/}"
 DIST="${DIST:-bookworm}"
 ARCH="${ARCH:-amd64}"
+MIRROR="${MIRROR:-http://mirrors.aliyun.com/debian/}"
 
 echo "[auto/config] Running lb config..."
 
-# 清理旧状态
-sudo rm -rf config/archives lb/ .build/ stage/ cache/
+# 只清理 live-build 自动生成的目录，不动 config/ 目录
+sudo rm -rf lb/ .build/ stage/ cache/
 
 # 生成基础配置
 sudo lb config \
@@ -27,3 +26,4 @@ sudo lb config \
     2>&1
 
 echo "[auto/config] lb config done."
+echo "[auto/config] config/ directory preserved."
