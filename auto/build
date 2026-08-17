@@ -1,3 +1,13 @@
 #!/bin/sh
-# 空脚本，不干扰 lb build
-exit 0
+# auto/build — live-build 构建入口脚本
+# 由 lb build 调用，或直接运行
+
+set -e
+
+echo "[auto/build] Starting live-build..."
+echo "Started at: $(date)"
+
+# 执行构建
+sudo lb build
+
+echo "[auto/build] Build finished at: $(date)"
