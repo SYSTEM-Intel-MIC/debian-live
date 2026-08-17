@@ -4,66 +4,223 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      debug:
+        description: 'Enable debug mode'
+        required: false
+        default: 'false'
+
+env:
+  DEBIAN_MIRROR: "http://mirrors.aliyun.com/debian/"
+  DEBIAN_SECURITY_MIRROR: "http://mirrors.aliyun.com/debian-security/"
+  LB_DISTRIBUTION: "bookworm"
+  LB_ARCHITECTURE: "amd64"
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: Build Debian Live ISO (${{ env.LB_DISTRIBUTION }}-${{ env.LB_ARCHITECTURE }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    # 防止并发构建同一分支
+    concurrency:
+      group: build-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
+      # ── 1. 环境准备 ────────────────────────────────────────────
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install live-build and tools
+      - name: Show disk space before build
         run: |
-          sudo apt-get update
-          sudo apt-get install -y live-build xorriso isolinux
+          df -h /
+          echo "::group::Memory"
+          free -h
+          echo "::endgroup::"
 
-      - name: Configure live-build and mirrors
+      # ── 2. 安装 Debian Bookworm 源 + live-build ──────────────
+      - name: Setup Debian Bookworm sources
         run: |
-          chmod +x scripts/setup.sh
-          sudo scripts/setup.sh
+          # 写入 Debian Bookworm sources.list（覆盖 Ubuntu 源）
+          sudo tee /etc/apt/sources.list << 'SOURCES'
+          deb http://mirrors.aliyun.com/debian/debian/ bookworm main contrib non-free non-free-firmware
+          deb http://mirrors.aliyun.com/debian/debian-security/ bookworm-security main contrib non-free non-free-firmware
+          SOURCES
+          cat /etc/apt/sources.list
 
-      - name: Copy real isolinux binaries to custom bootloaders dir
+      - name: Install live-build and dependencies
         run: |
-          # Ubuntu 24.04: isolinux package puts isolinux.bin in /usr/lib/ISOLINUX/
-          # vesamenu.c32 is in /usr/lib/syslinux/modules/bios/ (from syslinux-common)
-          sudo mkdir -p config/bootloaders/isolinux
-          sudo cp -L /usr/lib/ISOLINUX/isolinux.bin config/bootloaders/isolinux/
-          sudo cp -L /usr/lib/syslinux/modules/bios/vesamenu.c32 config/bootloaders/isolinux/
-          sudo cp -L /usr/lib/ISOLINUX/isohdpfx.bin config/bootloaders/isolinux/
-          echo "=== Custom bootloaders ==="
-          ls -la config/bootloaders/isolinux/
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends \
+            live-build \
+            debootstrap \
+            squashfs-tools \
+            xorriso \
+            grub-pc-bin \
+            grub-efi-amd64-bin \
+            mtools \
+            parted \
+            dosfstools \
+            unzip \
+            wget \
+            gpg \
+            2>&1 | tail -20
+          lb --version
 
+      # ── 3. 清理旧的构建目录 ────────────────────────────────────
+      - name: Clean previous build artifacts
+        run: |
+          chmod +x scripts/setup.sh scripts/cleanup.sh
+          sudo rm -rf config/archives lb/ .build/ stage/ cache/ *.iso 2>/dev/null || true
+
+      # ── 4. 配置 live-build ─────────────────────────────────────
+      - name: Run live-build config (auto/config)
+        run: |
+          sudo lb config \
+            --distribution bookworm \
+            --architectures amd64 \
+            --linux-flavours amd64 \
+            --bootappend-live "boot=live components splash" \
+            --binary-images iso-hybrid \
+            --source false \
+            --zsync false \
+            --firmware-chroot false \
+            --security true \
+            2>&1 | tail -20
+
+      # ── 5. 覆盖镜像源 ──────────────────────────────────────────
+      - name: Configure mirrors
+        run: |
+          MIRROR="http://mirrors.aliyun.com/debian/"
+          SECURITY="http://mirrors.aliyun.com/debian-security/"
+          BOOTSTRAP="http://deb.debian.org/debian/"
+
+          # Bootstrap 镜像
+          echo "LB_MIRROR_BOOTSTRAP=\"$BOOTSTRAP\"" | sudo tee -a config/bootstrap
+          echo "LB_PARENT_MIRROR_BOOTSTRAP=\"$BOOTSTRAP\"" | sudo tee -a config/bootstrap
+
+          # Chroot 镜像
+          echo "LB_MIRROR_CHROOT=\"$MIRROR\"" | sudo tee -a config/chroot
+          echo "LB_PARENT_MIRROR_CHROOT=\"$MIRROR\"" | sudo tee -a config/chroot
+
+          # Binary 镜像
+          echo "LB_MIRROR_BINARY=\"$MIRROR\"" | sudo tee -a config/binary
+          echo "LB_PARENT_MIRROR_BINARY=\"$MIRROR\"" | sudo tee -a config/binary
+          echo "LB_MIRROR_BINARY_SECURITY=\"$SECURITY\"" | sudo tee -a config/binary
+          echo "LB_PARENT_MIRROR_BINARY_SECURITY=\"$SECURITY\"" | sudo tee -a config/binary
+
+          # 禁用不必要的组件
+          echo "LB_SECURITY=\"true\"" | sudo tee -a config/chroot
+
+          echo "=== Bootstrap ==="
+          grep -E "^LB_.*MIRROR" config/bootstrap | grep -v "^#"
+          echo "=== Chroot ==="
+          grep -E "^LB_.*MIRROR|^LB_SECURITY" config/chroot | grep -v "^#"
+          echo "=== Binary ==="
+          grep -E "^LB_.*MIRROR" config/binary | grep -v "^#"
+
+      # ── 6. 写入 archive override 文件 ──────────────────────────
+      - name: Write mirror override files
+        run: |
+          sudo mkdir -p config/archives
+
+          # chroot archive（debootstrap 用）
+          cat | sudo tee config/archives/mirrors.list.chroot << 'EOF'
+          deb http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware
+          deb http://mirrors.aliyun.com/debian-security/ bookworm-security main contrib non-free non-free-firmware
+          EOF
+
+          # binary archive（最终 ISO 用）
+          cat | sudo tee config/archives/mirrors.list.binary << 'EOF'
+          deb http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware
+          deb http://mirrors.aliyun.com/debian-security/ bookworm-security main contrib non-free non-free-firmware
+          EOF
+
+          echo "=== Archives ==="
+          ls config/archives/
+
+      # ── 7. 添加 SSH 包 ─────────────────────────────────────────
       - name: Add SSH package
         run: |
-          mkdir -p config/package-lists
-          echo "openssh-server" > config/package-lists/ssh.list.chroot
-          sudo cp -r config/package-lists lb/config/ 2>/dev/null || true
+          sudo mkdir -p config/package-lists
+          echo "openssh-server" | sudo tee config/package-lists/ssh.list.chroot
+          cat config/package-lists/ssh.list.chroot
 
-      - name: Patch live-build to skip Contents-amd64.gz
+      # ── 8. 添加自定义 hook（启用 SSH）──────────────────────────
+      - name: Add SSH hook
         run: |
-          chmod +x scripts/patch-contents.py
-          sudo python3 scripts/patch-contents.py
+          sudo mkdir -p config/hooks/live
+          cat | sudo tee config/hooks/live/enable-ssh.hook.chroot << 'EOF'
+          #!/bin/sh
+          # 启用 SSH 密码登录
+          sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+          systemctl enable ssh
+          echo "SSH configured"
+          EOF
+          sudo chmod +x config/hooks/live/enable-ssh.hook.chroot
+          echo "Hook created"
 
-      - name: Build ISO
+      # ── 9. 构建 ISO ────────────────────────────────────────────
+      - name: Build ISO with live-build
+        id: build
         run: |
-          sudo lb build 2>&1
-          EXIT_CODE=$?
-          echo "Build exit code: $EXIT_CODE"
-          find . -name "*.iso" -ls 2>/dev/null || echo "No ISO found"
-          exit $EXIT_CODE
+          set -o pipefail
+          echo "=== Starting build at $(date) ==="
+          sudo lb build 2>&1 | tee build.log
+          BUILD_EXIT=$?
+          echo "Build exit code: $BUILD_EXIT"
+          echo "=== Build finished at $(date) ==="
+          exit $BUILD_EXIT
 
-      - name: Find ISO
+      # ── 10. 查找生成的 ISO ─────────────────────────────────────
+      - name: Find generated ISO
         id: find-iso
         run: |
-          ISO=$(find . -name "*.hybrid.iso" -o -name "*.iso" 2>/dev/null | grep -v "stage\|source" | head -1)
-          echo "iso_path=$ISO" >> $GITHUB_OUTPUT
-          echo "ISO=$ISO"
+          # 尝试多种可能的文件名
+          ISO=$(find . -name "*.hybrid.iso" 2>/dev/null | grep -v stage | head -1)
+          if [ -z "$ISO" ]; then
+            ISO=$(find . -name "*.iso" 2>/dev/null | grep -v "stage\|source" | head -1)
+          fi
+          if [ -z "$ISO" ]; then
+            echo "No ISO found, listing all files:"
+            find . -type f | grep -v ".git\|.github\|node_modules" | tail -30
+            echo "iso_path=" >> $GITHUB_OUTPUT
+          else
+            echo "iso_path=$ISO" >> $GITHUB_OUTPUT
+            echo "Found ISO: $ISO"
+            ls -lh "$ISO"
+          fi
 
-      - name: Upload ISO
+      # ── 11. 上传 artifact ──────────────────────────────────────
+      - name: Upload ISO artifact
         uses: actions/upload-artifact@v4
         if: steps.find-iso.outputs.iso_path != ''
         with:
-          name: custom-debian-live-amd64
+          name: debian-live-${{ github.ref_name }}-$(date +%Y%m%d-%H%M%S)
           path: ${{ steps.find-iso.outputs.iso_path }}
           retention-days: 7
+          compression-level: 0
+
+      # ── 12. 释放磁盘空间 ───────────────────────────────────────
+      - name: Cleanup disk space
+        if: always()
+        run: |
+          sudo rm -rf lb/ stage/ cache/ .build/ 2>/dev/null || true
+          df -h /
+
+  # ── 通知任务（可扩展）────────────────────────────────────────
+  notify:
+    needs: build
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Build result
+        run: |
+          if [[ "${{ needs.build.result }}" == "success" ]]; then
+            echo "✅ 构建成功！ISO 文件已上传到 Artifacts"
+          else
+            echo "❌ 构建失败，请查看上方日志"
+            exit 1
+          fi
