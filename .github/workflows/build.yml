@@ -4,38 +4,12 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
-    inputs:
-      hostname:
-        description: 'System hostname'
-        required: false
-        default: 'debian-live'
-      lang:
-        description: 'Language code (e.g. zh_CN, en_US)'
-        required: false
-        default: 'zh_CN'
-      timezone:
-        description: 'Timezone (e.g. Asia/Shanghai)'
-        required: false
-        default: 'Asia/Shanghai'
-      iso_label:
-        description: 'ISO volume label'
-        required: false
-        default: 'DEBIAN-LIVE'
-
-env:
-  # 默认定制参数
-  LIVE_HOSTNAME: ${{ inputs.hostname || 'debian-live' }}
-  LIVE_LANG: ${{ inputs.lang || 'zh_CN.UTF-8' }}
-  LIVE_TIMEZONE: ${{ inputs.timezone || 'Asia/Shanghai' }}
-  ISO_LABEL: ${{ inputs.iso_label || 'DEBIAN-LIVE' }}
-  DEBIAN_MIRROR: "http://mirrors.aliyun.com/debian"
-  DEBIAN_SECURITY: "http://mirrors.aliyun.com/debian-security"
 
 jobs:
   build:
     name: Build Debian Live ISO
     runs-on: ubuntu-24.04
-    timeout-minutes: 180
+    timeout-minutes: 120
 
     steps:
       # ── 1. Checkout ─────────────────────────────────────────────
@@ -45,31 +19,41 @@ jobs:
       - name: Show disk space
         run: df -h /
 
-      # ── 2. 配置 Debian Bookworm apt 源 ─────────────────────────
+      # ── 2. 配置 Debian Bookworm apt 源（用本地密钥，无外部下载）───
       - name: Setup Debian Bookworm sources with local keyring
         run: |
+          # 清理旧的 Ubuntu 源
           sudo rm -f /etc/apt/sources.list
           sudo rm -f /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
 
+          # 把本地密钥安装到 apt keyrings
           sudo mkdir -p /etc/apt/keyrings
           for keyring in \
             config/debian-archive-bookworm-automatic.gpg \
             config/debian-archive-bookworm-security-automatic.gpg \
             config/debian-archive-keyring.gpg; do
-            [ -f "$keyring" ] && sudo cp "$keyring" /etc/apt/keyrings/$(basename "$keyring")
+            if [ -f "$keyring" ]; then
+              sudo cp "$keyring" /etc/apt/keyrings/$(basename "$keyring")
+              echo "Installed: $keyring"
+            fi
           done
 
+          # debootstrap 需要此路径的密钥
           sudo cp config/debian-archive-keyring.gpg /usr/share/keyrings/debian-archive-keyring.gpg
+          echo "Installed debootstrap keyring"
 
-          sudo tee /etc/apt/sources.list << EOF
-          deb [signed-by=/etc/apt/keyrings/debian-archive-bookworm-automatic.gpg] ${{ env.DEBIAN_MIRROR }} bookworm main contrib non-free non-free-firmware
-          deb [signed-by=/etc/apt/keyrings/debian-archive-bookworm-security-automatic.gpg] ${{ env.DEBIAN_SECURITY }} bookworm-security main contrib non-free non-free-firmware
+          # 写入 Bookworm sources.list
+          sudo tee /etc/apt/sources.list << 'EOF'
+          deb [signed-by=/etc/apt/keyrings/debian-archive-bookworm-automatic.gpg] http://mirrors.aliyun.com/debian bookworm main contrib non-free non-free-firmware
+          deb [signed-by=/etc/apt/keyrings/debian-archive-bookworm-security-automatic.gpg] http://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware
           EOF
 
           sudo rm -f /etc/apt/sources.list.d/*.list 2>/dev/null || true
+          echo "=== sources.list ==="
+          cat /etc/apt/sources.list
 
-      # ── 3. 安装依赖 ────────────────────────────────────────────
-      - name: Install dependencies
+      # ── 3. 更新 apt + 安装依赖 ──────────────────────────────────
+      - name: Update apt and install dependencies
         run: |
           sudo apt-get update -y
           sudo apt-get install -y --no-install-recommends \
@@ -84,354 +68,127 @@ jobs:
             dosfstools \
             gpg \
             cpio \
-            locales \
             2>&1 | tail -10
           lb --version
 
-      # ── 4. 清理旧构建 ───────────────────────────────────────────
-      - name: Clean previous build
+      # ── 4. 清理旧构建（保留 config/，只清 lb/）───────────────────
+      - name: Clean previous build artifacts
         run: |
           sudo rm -rf lb/ .build/ stage/ cache/ *.iso *.log 2>/dev/null || true
+          echo "Cleaned (config/ preserved)"
 
-      # ── 5. 配置 live-build（主配置）─────────────────────────────
+      # ── 5. 配置 live-build ──────────────────────────────────────
       - name: Configure live-build
         run: |
-          # 设置默认语言和地区
-          sudo sed -i '/^#.*zh_CN\|^#.*en_US/s/^#//' /etc/locale.gen 2>/dev/null || true
-          sudo locale-gen ${{ env.LIVE_LANG }} 2>/dev/null || true
-
           sudo lb config \
             --distribution bookworm \
             --architectures amd64 \
             --linux-flavours amd64 \
-            --bootappend-live "boot=live components locale=${{ env.LIVE_LANG }} keyboard-layouts=${{ env.LIVE_LANG%%.* }} timezone=${{ env.LIVE_TIMEZONE }} hostname=${{ env.LIVE_HOSTNAME }} username=user fullname=Debian Live User splash" \
+            --bootappend-live "boot=live components splash" \
             --binary-images iso-hybrid \
             --source false \
             --zsync false \
             --firmware-chroot false \
             --debian-installer live \
-            --iso-volume-label "${{ env.ISO_LABEL }}" \
-            --language ${{ env.LIVE_LANG }} \
-            --keyboard-layout-code ${{ env.LIVE_LANG%%[._]* }} \
             2>&1 | tail -5
           echo "=== lb config done ==="
 
       # ── 6. 覆盖镜像源变量 ───────────────────────────────────────
       - name: Configure mirrors
         run: |
-          append() {
+          MIRROR="http://mirrors.aliyun.com/debian"
+          SECURITY="http://mirrors.aliyun.com/debian-security"
+
+          append_if_missing() {
             local file="$1" key="$2" val="$3"
             grep -q "^${key}=" "$file" && \
               sudo sed -i "s|^${key}=.*|${key}=\"${val}\"|" "$file" || \
               echo "${key}=\"${val}\"" | sudo tee -a "$file"
           }
 
-          append config/bootstrap "LB_MIRROR_BOOTSTRAP" "http://deb.debian.org/debian"
-          append config/bootstrap "LB_PARENT_MIRROR_BOOTSTRAP" "http://deb.debian.org/debian"
-          append config/chroot "LB_MIRROR_CHROOT" "${{ env.DEBIAN_MIRROR }}/"
-          append config/chroot "LB_PARENT_MIRROR_CHROOT" "${{ env.DEBIAN_MIRROR }}/"
-          append config/binary "LB_MIRROR_BINARY" "${{ env.DEBIAN_MIRROR }}/"
-          append config/binary "LB_PARENT_MIRROR_BINARY" "${{ env.DEBIAN_MIRROR }}/"
-          append config/binary "LB_MIRROR_BINARY_SECURITY" "${{ env.DEBIAN_SECURITY }}/"
+          append_if_missing config/bootstrap "LB_MIRROR_BOOTSTRAP" "http://deb.debian.org/debian"
+          append_if_missing config/bootstrap "LB_PARENT_MIRROR_BOOTSTRAP" "http://deb.debian.org/debian"
+          append_if_missing config/chroot "LB_MIRROR_CHROOT" "$MIRROR/"
+          append_if_missing config/chroot "LB_PARENT_MIRROR_CHROOT" "$MIRROR/"
+          append_if_missing config/binary "LB_MIRROR_BINARY" "$MIRROR/"
+          append_if_missing config/binary "LB_PARENT_MIRROR_BINARY" "$MIRROR/"
+          append_if_missing config/binary "LB_MIRROR_BINARY_SECURITY" "$SECURITY/"
+
+          echo "=== Chroot mirrors ==="
+          grep -E "^LB_.*MIRROR" config/chroot | grep -v "^#"
 
       # ── 7. 写入 archive override ────────────────────────────────
-      - name: Write archive overrides
+      - name: Write archive override files
         run: |
           sudo mkdir -p config/archives
 
-          cat | sudo tee config/archives/mirrors.list.chroot << EOF
-          deb ${{ env.DEBIAN_MIRROR }} bookworm main contrib non-free non-free-firmware
-          deb ${{ env.DEBIAN_SECURITY }} bookworm-security main contrib non-free non-free-firmware
+          cat | sudo tee config/archives/mirrors.list.chroot << 'EOF'
+          deb http://mirrors.aliyun.com/debian bookworm main contrib non-free non-free-firmware
+          deb http://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware
           EOF
 
-          cat | sudo tee config/archives/mirrors.list.binary << EOF
-          deb ${{ env.DEBIAN_MIRROR }} bookworm main contrib non-free non-free-firmware
-          deb ${{ env.DEBIAN_SECURITY }} bookworm-security main contrib non-free non-free-firmware
+          cat | sudo tee config/archives/mirrors.list.binary << 'EOF'
+          deb http://mirrors.aliyun.com/debian bookworm main contrib non-free non-free-firmware
+          deb http://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware
           EOF
 
-      # ── 8. 系统定制：主机名 / locale / MOTD ─────────────────────
-      - name: Customize system identity
-        run: |
-          # chroot hook：设置主机名、locale、时区、MOTD
-          sudo mkdir -p config/hooks/live
+          echo "=== Archives ==="
+          ls config/archives/
 
-          cat | sudo tee config/hooks/live/99-identity.hook.chroot << 'EOF'
-          #!/bin/sh
-          set -e
-          echo "$HOSTNAME" > /etc/hostname
-          sed -i "s/debian/$HOSTNAME/g" /etc/hosts
-          echo "127.0.1.1 $HOSTNAME" >> /etc/hosts
-
-          # 设置默认 locale
-          echo "$LANG UTF-8" >> /etc/locale.gen 2>/dev/null || true
-          locale-gen "$LANG" 2>/dev/null || true
-          echo "LANG=$LANG" > /etc/default/locale
-
-          # 时区
-          ln -sf /usr/share/zoneinfo/$TZ /etc/localtime 2>/dev/null || true
-
-          # 欢迎信息 MOTD
-          cat > /etc/motd << 'MOTD'
-          ================================================
-            Welcome to Debian Live Custom System
-            Hostname: $HOSTNAME
-            Language: $LANG
-            Timezone: $TZ
-          ================================================
-          MOTD
-
-          echo "Identity configured: hostname=$HOSTNAME lang=$LANG tz=$TZ"
-          EOF
-          sudo chmod +x config/hooks/live/99-identity.hook.chroot
-          echo "Identity hook created"
-
-      # ── 9. SSH 定制 ─────────────────────────────────────────────
-      - name: Configure SSH
-        run: |
-          sudo mkdir -p config/hooks/live
-          cat | sudo tee config/hooks/live/98-ssh.hook.chroot << 'EOF'
-          #!/bin/sh
-          set -e
-          # 允许密码登录
-          sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
-          sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
-          # 允许空密码
-          sed -i 's/^#*PermitEmptyPasswords.*/PermitEmptyPasswords no/' /etc/ssh/sshd_config
-          # 禁用 SSH 严格检查
-          mkdir -p /run/sshd
-          echo "SSH configured for password auth"
-          EOF
-          sudo chmod +x config/hooks/live/98-ssh.hook.chroot
-
-      # ── 10. GRUB 启动菜单定制 ───────────────────────────────────
-      - name: Customize GRUB boot menu
-        run: |
-          # 创建 GRUB 背景图目录和字体
-          sudo mkdir -p config/binary/boot/grub/themes/custom
-          sudo mkdir -p config/binary/boot/grub/fonts
-
-          # 生成纯色 PNG 背景（640x480，深蓝色）
-          python3 << 'PYEOF'
-          import struct, zlib
-
-          def create_png(width, height, r, g, b):
-              def chunk(t, data):
-                  c = t + data
-                  return struct.pack('>I', len(data)) + c + struct.pack('>I', zlib.crc32(c) & 0xffffffff)
-              # IHDR
-              ihdr = struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0)
-              # IDAT
-              raw = b''
-              for y in range(height):
-                  raw += b'\x00' + bytes([r, g, b] * width)
-              idat = zlib.compress(raw, 9)
-              # IEND
-              png = b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', ihdr) + chunk(b'IDAT', idat) + chunk(b'IEND', b'')
-              return png
-
-          # 启动背景图（暗蓝色）
-          with open('/tmp/boot_splash.png', 'wb') as f:
-              f.write(create_png(640, 480, 13, 42, 76))
-          # GRUB 主题背景
-          with open('/tmp/grub_bg.png', 'wb') as f:
-              f.write(create_png(1920, 1080, 13, 42, 76))
-
-          import os
-          os.makedirs('/tmp/grub_theme', exist_ok=True)
-          with open('/tmp/grub_theme/theme.txt', 'w') as f:
-              f.write('''\
-              # GRUB 主题配置
-              global {
-                left=0
-                right=0
-                top=0
-                bottom=0
-              }
-
-              boot_menu {
-                left=10%%
-                width=80%%
-                top=20%%
-                height=60%%
-                item_color = "#ffffff"
-                selected_item_color = "#ffcc00"
-                item_height = 40
-                item_padding = 10
-                item_spacing = 5
-                title_color = "#ffffff"
-                font = "Unifont Regular 16"
-              }
-              ''')
-          print("GRUB theme files created")
-          PYEOF
-
-          # 安装到 config
-          sudo cp /tmp/boot_splash.png config/binary/boot/grub/
-          sudo cp /tmp/grub_bg.png config/binary/boot/grub/themes/custom/
-          sudo cp /tmp/grub_theme/theme.txt config/binary/boot/grub/themes/custom/
-
-          # GRUB 配置模板（写入 ISO /boot/grub）
-          sudo mkdir -p config/binary/boot/grub
-          cat | sudo tee config/binary/boot/grub/grub.cfg << 'EOF'
-          # GRUB 启动配置
-          set timeout=10
-          set default=0
-
-          # 背景图
-          if background_image /boot/grub/grub_bg.png; then
-            set color_normal=white/black
-            set color_highlight=yellow/black
-          else
-            set color_normal=white/black
-            set color_highlight=yellow/black
-          fi
-
-          menuentry "Debian Live (试用体验)" {
-            linux /live/vmlinuz boot=live components splash locale=zh_CN.UTF-8
-            initrd /live/initrd.img
-          }
-
-          menuentry "Debian Live (试用 - 英文)" {
-            linux /live/vmlinuz boot=live components splash locale=en_US.UTF-8
-            initrd /live/initrd.img
-          }
-
-          menuentry "Install Debian (图形化安装)" {
-            linux /install/vmlinuz locale=zh_CN.UTF-8 desktop-image=/install/gtk/vmlinuz video=vesa yast2/theme
-            initrd /install/initrd.gz
-          }
-
-          menuentry "Install Debian (命令行安装)" {
-            linux /install/vmlinuz locale=zh_CN.UTF-8
-            initrd /install/initrd.gz
-          }
-
-          menuentry "Memory test (memtest86+)" {
-            linux /live/memtest86+
-          }
-          EOF
-          echo "GRUB config written"
-
-          # 设置 GRUB 背景和主题
-          echo 'LB_GRUB_BACKGROUND="/boot/grub/grub_bg.png"' | sudo tee -a config/binary
-          echo 'LB_GRUB_THEME="/boot/grub/themes/custom/theme.txt"' | sudo tee -a config/binary
-          echo 'LB_GRUB_SPLASH="/boot/grub/boot_splash.png"' | sudo tee -a config/binary
-          echo 'LB_GRUB_TERMINAL="console"' | sudo tee -a config/binary
-
-          echo "=== GRUB customization done ==="
-
-      # ── 11. Debian Installer 配置 ───────────────────────────────
-      - name: Configure Debian installer
-        run: |
-          # preseed 无人值守安装配置（可选，注释掉即为交互式）
-          sudo mkdir -p config/preseed
-
-          cat | sudo tee config/preseed/live.seed << 'EOF'
-          # Debian Installer preseed 配置文件
-          # 使用前请根据实际需求修改
-
-          # 地区和语言
-          d-i debian-installer/locale string zh_CN.UTF-8
-          d-i debian-installer/language string zh_CN
-          d-i debian-installer/country string CN
-
-          # 键盘
-          d-i console-keymaps-at/keymap select cn
-          d-i keyboard-configuration/xkb-keymap select cn
-
-          # 网络（自动获取 DHCP）
-          d-i netcfg/choose_interface select auto
-          d-i netcfg/get_hostname string debian
-          d-i netcfg/get_domain string local
-
-          # 镜像
-          d-i mirror/country string manual
-          d-i mirror/http/hostname string mirrors.aliyun.com
-          d-i mirror/http/directory string /debian
-          d-i mirror/http/proxy string
-
-          # 时区
-          d-i time/zone string Asia/Shanghai
-          d-i clock-setup/utc boolean true
-
-          # 分区（自动整盘安装）
-          d-i partman-auto/method string regular
-          d-i partman-auto/choose_recipe select atomic
-          d-i partman-auto/expert_recipe string \
-            boot-root :: \
-              512 512 512 ext4 \
-                $bootrootfs{ } \
-                method{ format } \
-                format{ } \
-                use_filesystem{ } \
-                filesystem{ ext4 } \
-                mountpoint{ /boot } \
-              . \
-              1024 10000 -1 ext4 \
-                $bootrootfs{ } \
-                method{ format } \
-                format{ } \
-                use_filesystem{ } \
-                filesystem{ ext4 } \
-                mountpoint{ / } \
-              .
-          d-i partman/confirm_write_new_label boolean true
-          d-i partman/choose_partition select finish
-          d-i partman/confirm boolean true
-
-          # 管理员账号
-          d-i passwd/root-password password root
-          d-i passwd/root-password-again password root
-          d-i passwd/make-user boolean true
-          d-i passwd/user-fullname string Debian Live User
-          d-i passwd/username string user
-          d-i passwd/user-password password live
-          d-i passwd/user-password-again password live
-
-          # 软件选择
-          tasksel tasksel/first multiselect standard, ssh-server
-
-          # 完成后重启
-          d-i finish-install/reboot_in_progress note
-          EOF
-          echo "=== Preseed file written ==="
-
-          # Installer 配置
-          echo 'LB_DEBIAN_INSTALLER_GUI="true"' | sudo tee -a config/binary
-          echo 'LB_DEBIAN_INSTALLER_MODE="live"' | sudo tee -a config/binary
-
-      # ── 12. 添加软件包 ─────────────────────────────────────────
-      - name: Add packages
+      # ── 8. 添加 SSH 包 ─────────────────────────────────────────
+      - name: Add SSH package
         run: |
           sudo mkdir -p config/package-lists
-
-          # SSH 服务器
           echo "openssh-server" | sudo tee config/package-lists/ssh.list.chroot
 
-          # 标准工具
-          echo "vim nano curl wget net-tools iputils-ping" | sudo tee config/package-lists/tools.list.chroot
+      # ── 9. SSH hook ─────────────────────────────────────────────
+      - name: Add SSH hook
+        run: |
+          sudo mkdir -p config/hooks/live
+          cat | sudo tee config/hooks/live/enable-ssh.hook.chroot << 'EOF'
+          #!/bin/sh
+          set -e
+          sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+          echo "SSH configured"
+          EOF
+          sudo chmod +x config/hooks/live/enable-ssh.hook.chroot
 
-          # 语言支持（中文）
-          echo "locales locales-all" | sudo tee config/package-lists/locales.list.chroot
+      # ── 10. 配置 Debian Installer ────────────────────────────────
+      - name: Configure Debian installer
+        run: |
+          # 启用图形化安装界面
+          echo 'LB_DEBIAN_INSTALLER_GUI="true"' | sudo tee -a config/binary
+          echo 'LB_DEBIAN_INSTALLER_MODE="live"' | sudo tee -a config/binary
+          echo 'LB_DEBIAN_INSTALLER_PRESEED=""' | sudo tee -a config/binary
 
-      # ── 13. 构建 ISO ────────────────────────────────────────────
+          # 添加 installer 包
+          sudo mkdir -p config/package-lists
+          echo 'debian-installer' | sudo tee -a config/package-lists/installer.list.chroot
+          echo 'tasksel' | sudo tee -a config/package-lists/installer.list.chroot
+
+          echo "=== Installer config ==="
+          grep -E "DEBIAN_INSTALLER" config/binary | grep -v "^#" || true
+
+      # ── 11. 构建 ISO ────────────────────────────────────────────
       - name: Build ISO
         id: build
         run: |
           set -o pipefail
-          echo "=== Build started: $(date) ==="
-          echo "=== Hostname: $HOSTNAME | Lang: $LANG | TZ: $TZ ==="
+          echo "Build started: $(date)"
           sudo lb build 2>&1 | tee build.log
           EXIT=$?
-          echo "=== Build finished: $(date), exit=$EXIT ==="
+          echo "Build finished: $(date), exit=$EXIT"
           exit $EXIT
 
-      # ── 14. 找 ISO ─────────────────────────────────────────────
+      # ── 12. 找 ISO ─────────────────────────────────────────────
       - name: Find ISO
         id: find-iso
         run: |
           ISO=$(find . -name "*.hybrid.iso" 2>/dev/null | grep -v stage | head -1)
-          [ -z "$ISO" ] && ISO=$(find . -name "*.iso" 2>/dev/null | grep -v "stage\|source" | head -1)
+          if [ -z "$ISO" ]; then
+            ISO=$(find . -name "*.iso" 2>/dev/null | grep -v "stage\|source" | head -1)
+          fi
           if [ -n "$ISO" ]; then
             echo "iso_path=$ISO" >> $GITHUB_OUTPUT
             echo "Found: $ISO"
@@ -442,18 +199,18 @@ jobs:
             find . -name "*.iso" 2>/dev/null
           fi
 
-      # ── 15. 上传 artifact ───────────────────────────────────────
+      # ── 13. 上传 artifact ───────────────────────────────────────
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4
         if: steps.find-iso.outputs.iso_path != ''
         with:
-          name: debian-live-${{ env.ISO_LABEL }}-${{ github.run_number }}
+          name: debian-live-${{ github.run_number }}-with-installer
           path: ${{ steps.find-iso.outputs.iso_path }}
           retention-days: 7
           compression-level: 0
 
-      # ── 16. 清理 ───────────────────────────────────────────────
-      - name: Cleanup
+      # ── 14. 清理 ───────────────────────────────────────────────
+      - name: Cleanup disk space
         if: always()
         run: |
           sudo rm -rf lb/ stage/ cache/ .build/ 2>/dev/null || true
@@ -468,10 +225,7 @@ jobs:
       - name: Build result
         run: |
           if [[ "${{ needs.build.result }}" == "success" ]]; then
-            echo "✅ 构建成功！"
-            echo "📦 ISO 已上传到 Artifacts"
-            echo "🏷️ 系统名: $LIVE_HOSTNAME"
-            echo "🌐 语言: $LIVE_LANG"
+            echo "✅ 构建成功！ISO 已上传到 Artifacts"
           else
             echo "❌ 构建失败，请查看上方日志"
             exit 1
