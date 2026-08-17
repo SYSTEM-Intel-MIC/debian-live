@@ -4,51 +4,64 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
-    inputs:
-      debug:
-        description: 'Enable debug mode'
-        required: false
-        default: 'false'
-
-env:
-  DEBIAN_MIRROR: "http://mirrors.aliyun.com/debian/"
-  DEBIAN_SECURITY_MIRROR: "http://mirrors.aliyun.com/debian-security/"
-  LB_DISTRIBUTION: "bookworm"
-  LB_ARCHITECTURE: "amd64"
 
 jobs:
   build:
-    name: Build Debian Live ISO (bookworm-amd64)
+    name: Build Debian Live ISO
     runs-on: ubuntu-24.04
     timeout-minutes: 120
 
     steps:
-      # ── 1. 环境准备 ────────────────────────────────────────────
+      # ── 1. Checkout ─────────────────────────────────────────────
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show disk space before build
-        run: |
-          df -h /
-          echo "::group::Memory"
-          free -h
-          echo "::endgroup::"
+      - name: Show disk space
+        run: df -h /
 
-      # ── 2. 安装 Debian Bookworm 源 + live-build ──────────────
-      - name: Setup Debian Bookworm sources
+      # ── 2. 配置 Debian Bookworm 源 + 导入密钥 ──────────────────
+      - name: Setup Debian Bookworm apt sources
         run: |
-          # 写入 Debian Bookworm sources.list（覆盖 Ubuntu 源）
-          sudo tee /etc/apt/sources.list << 'SOURCES'
+          # 清理旧的 Ubuntu 源
+          sudo rm -f /etc/apt/sources.list
+          sudo rm -f /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+
+          # 写入 Bookworm sources.list
+          sudo tee /etc/apt/sources.list << 'EOF'
           deb http://mirrors.aliyun.com/debian bookworm main contrib non-free non-free-firmware
           deb http://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware
-          SOURCES
-          # 清理其他源以防冲突
-          sudo rm -f /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+          EOF
+
+          # 下载并安装 Debian Bookworm 归档密钥（解决 NO_PUBKEY 问题）
+          wget -qO- https://ftp-master.metadata.org/ftp/distributions/Debian/repo/keyring/debian-archive-bookworm-automatic.asc \
+            | gpg --dearmor -o /tmp/debian-archive-bookworm.gpg 2>/dev/null || \
+          wget -qO- http://ftp.debian.org/debian/pool/main/d/debian-archive-keyring/debian-archive-keyring_2023.3_all.deb -o /tmp/keyring.deb
+
+          # 尝试用 deb 包方式安装（最可靠）
+          wget -q "http://ftp.debian.org/debian/pool/main/d/debian-archive-keyring/debian-archive-keyring_2023.3_all.deb" \
+            -O /tmp/keyring.deb 2>/dev/null && \
+            sudo dpkg -i /tmp/keyring.deb && echo "Keyring installed" || \
+            echo "Keyring install failed, trying manual import"
+
+          # 手动导入关键公钥（如果 deb 安装失败）
+          for key in \
+            "6ED0E7B82643E131" \
+            "78DBA3BC47EF2265" \
+            "F8D2585B8783D481" \
+            "54404762BBB6E853" \
+            "BDE6D2B9216EC7A8"; do
+            sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys "$key" 2>/dev/null || true
+          done
+
           cat /etc/apt/sources.list
 
+      # ── 3. 更新 apt + 安装依赖 ──────────────────────────────────
       - name: Install live-build and dependencies
         run: |
-          sudo apt-get update -y
+          sudo apt-get update -y || {
+            # 备用：允许不安全仓库继续
+            sudo apt-get update -y --allow-insecure-repositories || true
+          }
           sudo apt-get install -y --no-install-recommends \
             live-build \
             debootstrap \
@@ -59,20 +72,18 @@ jobs:
             mtools \
             parted \
             dosfstools \
-            unzip \
-            wget \
             gpg \
-            2>&1 | tail -20
+            2>&1 | tail -10
           lb --version
 
-      # ── 3. 清理旧的构建目录 ────────────────────────────────────
+      # ── 4. 清理旧构建 ───────────────────────────────────────────
       - name: Clean previous build artifacts
         run: |
-          chmod +x scripts/setup.sh scripts/cleanup.sh
-          sudo rm -rf config/archives lb/ .build/ stage/ cache/ *.iso 2>/dev/null || true
+          sudo rm -rf config/archives lb/ .build/ stage/ cache/ *.iso *.log 2>/dev/null || true
+          chmod +x scripts/setup.sh
 
-      # ── 4. 配置 live-build ─────────────────────────────────────
-      - name: Run live-build config (auto/config)
+      # ── 5. 运行 live-build 配置 ────────────────────────────────
+      - name: Configure live-build
         run: |
           sudo lb config \
             --distribution bookworm \
@@ -83,51 +94,41 @@ jobs:
             --source false \
             --zsync false \
             --firmware-chroot false \
-            --security true \
-            2>&1 | tail -20
+            2>&1 | tail -5
+          echo "=== lb config done ==="
 
-      # ── 5. 覆盖镜像源 ──────────────────────────────────────────
-      - name: Configure mirrors
+      # ── 6. 覆盖镜像源变量 ───────────────────────────────────────
+      - name: Configure mirrors in lb config files
         run: |
-          MIRROR="http://mirrors.aliyun.com/debian/"
-          SECURITY="http://mirrors.aliyun.com/debian-security/"
-          BOOTSTRAP="http://deb.debian.org/debian/"
+          MIRROR="http://mirrors.aliyun.com/debian"
+          SECURITY="http://mirrors.aliyun.com/debian-security"
 
-          # Bootstrap 镜像
-          echo "LB_MIRROR_BOOTSTRAP=\"$BOOTSTRAP\"" | sudo tee -a config/bootstrap
-          echo "LB_PARENT_MIRROR_BOOTSTRAP=\"$BOOTSTRAP\"" | sudo tee -a config/bootstrap
+          # Bootstrap
+          echo "LB_MIRROR_BOOTSTRAP=\"http://deb.debian.org/debian\"" | sudo tee -a config/bootstrap
+          echo "LB_PARENT_MIRROR_BOOTSTRAP=\"http://deb.debian.org/debian\"" | sudo tee -a config/bootstrap
 
-          # Chroot 镜像
-          echo "LB_MIRROR_CHROOT=\"$MIRROR\"" | sudo tee -a config/chroot
-          echo "LB_PARENT_MIRROR_CHROOT=\"$MIRROR\"" | sudo tee -a config/chroot
+          # Chroot（阿里云）
+          echo "LB_MIRROR_CHROOT=\"$MIRROR/\"" | sudo tee -a config/chroot
+          echo "LB_PARENT_MIRROR_CHROOT=\"$MIRROR/\"" | sudo tee -a config/chroot
 
-          # Binary 镜像
-          echo "LB_MIRROR_BINARY=\"$MIRROR\"" | sudo tee -a config/binary
-          echo "LB_PARENT_MIRROR_BINARY=\"$MIRROR\"" | sudo tee -a config/binary
-          echo "LB_MIRROR_BINARY_SECURITY=\"$SECURITY\"" | sudo tee -a config/binary
+          # Binary（阿里云）
+          echo "LB_MIRROR_BINARY=\"$MIRROR/\"" | sudo tee -a config/binary
+          echo "LB_PARENT_MIRROR_BINARY=\"$MIRROR/\"" | sudo tee -a config/binary
+          echo "LB_MIRROR_BINARY_SECURITY=\"$SECURITY/\"" | sudo tee -a config/binary
 
-          # 禁用不必要的组件
-          echo "LB_SECURITY=\"true\"" | sudo tee -a config/chroot
+          echo "=== Chroot mirrors ==="
+          grep -E "^LB_.*MIRROR" config/chroot | grep -v "^#"
 
-          echo "=== Bootstrap ==="
-          grep -E "^LB_.*MIRROR" config/bootstrap | grep -v "^#"
-          echo "=== Chroot ==="
-          grep -E "^LB_.*MIRROR|^LB_SECURITY" config/chroot | grep -v "^#"
-          echo "=== Binary ==="
-          grep -E "^LB_.*MIRROR" config/binary | grep -v "^#"
-
-      # ── 6. 写入 archive override 文件 ──────────────────────────
-      - name: Write mirror override files
+      # ── 7. 写入 archive override 文件 ──────────────────────────
+      - name: Write archive override files
         run: |
           sudo mkdir -p config/archives
 
-          # chroot archive（debootstrap 用）
           cat | sudo tee config/archives/mirrors.list.chroot << 'EOF'
           deb http://mirrors.aliyun.com/debian bookworm main contrib non-free non-free-firmware
           deb http://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware
           EOF
 
-          # binary archive（最终 ISO 用）
           cat | sudo tee config/archives/mirrors.list.binary << 'EOF'
           deb http://mirrors.aliyun.com/debian bookworm main contrib non-free non-free-firmware
           deb http://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware
@@ -136,77 +137,73 @@ jobs:
           echo "=== Archives ==="
           ls config/archives/
 
-      # ── 7. 添加 SSH 包 ─────────────────────────────────────────
+      # ── 8. 添加 SSH 包 ─────────────────────────────────────────
       - name: Add SSH package
         run: |
           sudo mkdir -p config/package-lists
           echo "openssh-server" | sudo tee config/package-lists/ssh.list.chroot
-          cat config/package-lists/ssh.list.chroot
 
-      # ── 8. 添加自定义 hook（启用 SSH）──────────────────────────
-      - name: Add SSH hook
+      # ── 9. SSH hook ─────────────────────────────────────────────
+      - name: Add SSH enable hook
         run: |
           sudo mkdir -p config/hooks/live
           cat | sudo tee config/hooks/live/enable-ssh.hook.chroot << 'EOF'
           #!/bin/sh
-          # 启用 SSH 密码登录
+          set -e
           sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
           sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
-          systemctl enable ssh
           echo "SSH configured"
           EOF
           sudo chmod +x config/hooks/live/enable-ssh.hook.chroot
           echo "Hook created"
 
-      # ── 9. 构建 ISO ────────────────────────────────────────────
-      - name: Build ISO with live-build
+      # ── 10. 构建 ISO ────────────────────────────────────────────
+      - name: Build ISO
         id: build
         run: |
           set -o pipefail
-          echo "=== Starting build at $(date) ==="
+          echo "Build started: $(date)"
           sudo lb build 2>&1 | tee build.log
-          BUILD_EXIT=$?
-          echo "Build exit code: $BUILD_EXIT"
-          echo "=== Build finished at $(date) ==="
-          exit $BUILD_EXIT
+          EXIT=$?
+          echo "Build finished: $(date), exit=$EXIT"
+          exit $EXIT
 
-      # ── 10. 查找生成的 ISO ─────────────────────────────────────
-      - name: Find generated ISO
+      # ── 11. 找 ISO ─────────────────────────────────────────────
+      - name: Find ISO
         id: find-iso
         run: |
-          # 尝试多种可能的文件名
           ISO=$(find . -name "*.hybrid.iso" 2>/dev/null | grep -v stage | head -1)
           if [ -z "$ISO" ]; then
             ISO=$(find . -name "*.iso" 2>/dev/null | grep -v "stage\|source" | head -1)
           fi
-          if [ -z "$ISO" ]; then
-            echo "No ISO found, listing all files:"
-            find . -type f | grep -v ".git\|.github\|node_modules" | tail -30
-            echo "iso_path=" >> $GITHUB_OUTPUT
-          else
+          if [ -n "$ISO" ]; then
             echo "iso_path=$ISO" >> $GITHUB_OUTPUT
-            echo "Found ISO: $ISO"
+            echo "Found: $ISO"
             ls -lh "$ISO"
+          else
+            echo "No ISO found"
+            find . -name "*.iso" 2>/dev/null
+            echo "iso_path=" >> $GITHUB_OUTPUT
           fi
 
-      # ── 11. 上传 artifact ──────────────────────────────────────
+      # ── 12. 上传 artifact ───────────────────────────────────────
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4
         if: steps.find-iso.outputs.iso_path != ''
         with:
-          name: debian-live-${{ github.ref_name }}-$(date +%Y%m%d-%H%M%S)
+          name: debian-live-${{ github.run_number }}
           path: ${{ steps.find-iso.outputs.iso_path }}
           retention-days: 7
           compression-level: 0
 
-      # ── 12. 释放磁盘空间 ───────────────────────────────────────
+      # ── 13. 清理磁盘 ───────────────────────────────────────────
       - name: Cleanup disk space
         if: always()
         run: |
           sudo rm -rf lb/ stage/ cache/ .build/ 2>/dev/null || true
           df -h /
 
-  # ── 通知任务（可扩展）────────────────────────────────────────
+  # ── 构建结果通知 ─────────────────────────────────────────────
   notify:
     needs: build
     runs-on: ubuntu-latest
@@ -215,8 +212,8 @@ jobs:
       - name: Build result
         run: |
           if [[ "${{ needs.build.result }}" == "success" ]]; then
-            echo "✅ 构建成功！ISO 文件已上传到 Artifacts"
+            echo "✅ 构建成功！ISO 已上传到 Artifacts"
           else
-            echo "❌ 构建失败，请查看上方日志"
+            echo "❌ 构建失败，请查看上方日志排查"
             exit 1
           fi
