@@ -1,2 +1,29 @@
 #!/bin/sh
-exit 0
+# auto/config — live-build 配置生成脚本
+# 由 lb config 调用，或直接运行
+
+set -e
+
+MIRROR="${MIRROR:-http://mirrors.aliyun.com/debian/}"
+SECURITY="${SECURITY:-http://mirrors.aliyun.com/debian-security/}"
+DIST="${DIST:-bookworm}"
+ARCH="${ARCH:-amd64}"
+
+echo "[auto/config] Running lb config..."
+
+# 清理旧状态
+sudo rm -rf config/archives lb/ .build/ stage/ cache/
+
+# 生成基础配置
+sudo lb config \
+    --distribution "${DIST}" \
+    --architectures "${ARCH}" \
+    --linux-flavours amd64 \
+    --bootappend-live "boot=live components splash" \
+    --binary-images iso-hybrid \
+    --source false \
+    --zsync false \
+    --firmware-chroot false \
+    2>&1
+
+echo "[auto/config] lb config done."
