@@ -72,6 +72,7 @@ parted
 grub-common
 grub-pc-bin
 grub-efi-amd64-bin
+syslinux-utils
 efibootmgr
 os-prober
 
