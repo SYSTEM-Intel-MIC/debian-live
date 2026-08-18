@@ -63,8 +63,9 @@ eog
 calamares
 calamares-settings-debian
 parted
-grub-pc
-grub-efi-amd64
+grub-common
+grub-pc-bin
+grub-efi-amd64-bin
 efibootmgr
 os-prober
 
