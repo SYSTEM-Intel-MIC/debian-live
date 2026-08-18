@@ -96,7 +96,7 @@ jobs:
             --zsync false \
             --firmware-chroot true \
             --apt-recommends false \
-            --debian-installer live
+            --debian-installer false
 
           sudo mkdir -p config/archives
           cat <<'EOF' | sudo tee config/archives/lindows.list.chroot

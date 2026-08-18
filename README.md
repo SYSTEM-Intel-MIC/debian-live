@@ -10,7 +10,7 @@
 |---|---|
 | 桌面与会话 | ElevenDE 3.5.1、Openbox、picom、LightDM GTK Greeter、Xorg、NetworkManager。 |
 | 发行版品牌 | `Lindows 1.0 (Bookworm)`、SYSTEM-Intel-MIC 作者标识、原创深蓝桌面壁纸、BIOS/UEFI Live 启动菜单和已安装系统 GRUB Lindows 主题。 |
-| 安装程序 | Calamares 图形化安装器使用 Lindows 名称、标志、壁纸和引导项名称；桌面和应用菜单均提供“安装 Lindows”入口。 |
+| 安装程序 | Calamares 图形化安装器使用 Lindows 名称、标志、壁纸和引导项名称；桌面和应用菜单均提供“安装 Lindows”入口。ISO 不再打包会触发过时 Contents 索引请求的 Debian Installer Live。 |
 | 中文支持 | Fcitx5、中文扩展、拼音、Noto CJK；GTK、Qt 和 XIM 环境变量已预配置。 |
 | 日常软件 | Firefox ESR、VLC、Eye of GNOME 图片查看器、PeaZip Qt6。 |
 | Lindows 服务应用 | Copilot for Linux AI 桌面面板、Feedback Hub for Linux 本地反馈中心。 |
