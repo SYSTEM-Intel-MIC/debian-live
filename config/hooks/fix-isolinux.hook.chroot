@@ -1,4 +1,0 @@
-#!/bin/sh
-# Hook disabled - isolinux binaries are now provided via config/bootloaders/
-exit 0
-

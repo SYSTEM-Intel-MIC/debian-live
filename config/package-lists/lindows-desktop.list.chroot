@@ -1,0 +1,77 @@
+# Lindows core: Debian Bookworm AMD64, minimal X11 and ElevenDE session
+live-boot
+live-config
+live-config-systemd
+systemd-sysv
+linux-image-amd64
+firmware-linux
+firmware-iwlwifi
+
+# X11 session, light display manager and lightweight compositor/window manager
+xorg
+xinit
+x11-xserver-utils
+x11-utils
+openbox
+picom
+lightdm
+lightdm-gtk-greeter
+xterm
+dbus-x11
+policykit-1
+sudo
+network-manager
+
+# ElevenDE and its declared runtime stack
+libx11-6
+libxft2
+libfontconfig1
+libpng16-16
+libxtst6
+libxi6
+libdbus-1-3
+libcrypt1
+libgtk-3-0
+libqt6widgets6
+libqt6gui6
+libqt6core6
+libqt6network6
+libqt6dbus6
+libgdk-pixbuf-2.0-0
+shared-mime-info
+adwaita-icon-theme
+hicolor-icon-theme
+librsvg2-common
+alsa-utils
+pulseaudio-utils
+
+# Chinese locale and Fcitx5 input method
+locales
+fonts-noto-cjk
+fonts-noto-color-emoji
+fcitx5
+fcitx5-config-qt
+fcitx5-frontend-gtk3
+fcitx5-frontend-qt5
+fcitx5-chinese-addons
+fcitx5-pinyin
+
+# Requested everyday applications
+firefox-esr
+vlc
+eog
+calamares
+parted
+
+# Runtime dependencies of integrated system tools
+python3
+python3-tk
+xdotool
+wmctrl
+libjson-glib-1.0-0
+libdrm2
+libsystemd0
+pciutils
+usbutils
+procps
+man-db

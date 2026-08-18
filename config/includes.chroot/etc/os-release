@@ -1,0 +1,11 @@
+PRETTY_NAME="Lindows 1.0 (Bookworm)"
+NAME="Lindows"
+VERSION_ID="1.0"
+VERSION="1.0 (Bookworm)"
+VERSION_CODENAME=bookworm
+ID=lindows
+ID_LIKE=debian
+HOME_URL="https://github.com/SYSTEM-Intel-MIC/debian-live"
+SUPPORT_URL="https://github.com/SYSTEM-Intel-MIC/debian-live/issues"
+BUG_REPORT_URL="https://github.com/SYSTEM-Intel-MIC/debian-live/issues"
+BUILD_ID="SYSTEM-Intel-MIC"

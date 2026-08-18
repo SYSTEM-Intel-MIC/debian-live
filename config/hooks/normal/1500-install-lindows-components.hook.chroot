@@ -1,0 +1,27 @@
+#!/bin/sh
+set -eu
+
+PKG_DIR=/opt/lindows/packages
+if [ ! -d "$PKG_DIR" ] || ! ls "$PKG_DIR"/*.deb >/dev/null 2>&1; then
+    echo "Lindows component packages are missing: $PKG_DIR" >&2
+    exit 1
+fi
+
+cd "$PKG_DIR"
+sha256sum -c SHA256SUMS
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y --no-install-recommends ./*.deb
+
+# Packages are installed; keeping their archives only increases the ISO.
+rm -rf "$PKG_DIR"
+mkdir -p /usr/share/lindows
+cat > /usr/share/lindows/components.txt <<'EOF'
+Lindows bundled components
+- ElevenDE 3.5.1
+- LinuxPCManager (fixed source revision)
+- linux-regedit (fixed source revision)
+- lindows-bsod (fixed source revision; never enabled as a service)
+- lindows-device-manager (fixed source revision)
+- PeaZip 11.2.0 Qt6 official DEB
+EOF

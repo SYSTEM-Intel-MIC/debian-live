@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Install Lindows
+Name[zh_CN]=安装 Lindows
+Comment=Install Lindows to the local disk
+Comment[zh_CN]=将 Lindows 安装到本机磁盘
+Exec=lindows-installer
+Icon=calamares
+Terminal=false
+Categories=System;Settings;
+Keywords=install;installer;Lindows;安装;
+StartupNotify=true

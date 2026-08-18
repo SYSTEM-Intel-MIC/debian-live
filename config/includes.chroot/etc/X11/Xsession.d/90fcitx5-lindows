@@ -1,0 +1,4 @@
+# Lindows input method environment for X11 display-manager sessions.
+export GTK_IM_MODULE=fcitx
+export QT_IM_MODULE=fcitx
+export XMODIFIERS=@im=fcitx

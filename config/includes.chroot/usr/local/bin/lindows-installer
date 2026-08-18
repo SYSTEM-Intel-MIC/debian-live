@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+if ! command -v calamares >/dev/null 2>&1; then
+    echo "Calamares is not installed in this Lindows Live session." >&2
+    exit 1
+fi
+
+# Calamares needs administrative access to partition and install. Keep the
+# privilege boundary visible to the person who starts the installer.
+exec pkexec calamares "$@"

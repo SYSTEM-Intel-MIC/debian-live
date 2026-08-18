@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Fcitx 5
+Name[zh_CN]=Fcitx 5 输入法
+Comment=Start the Fcitx 5 input method daemon
+Exec=fcitx5 -d
+OnlyShowIn=ElevenDE;Openbox;
+X-GNOME-Autostart-enabled=true
+NoDisplay=true
