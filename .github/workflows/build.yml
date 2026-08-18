@@ -94,7 +94,7 @@ jobs:
             --iso-volume "Lindows 1.0" \
             --source false \
             --zsync false \
-            --firmware-chroot true \
+            --firmware-chroot false \
             --apt-recommends false \
             --debian-installer false
 
