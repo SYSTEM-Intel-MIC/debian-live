@@ -66,6 +66,8 @@ jobs:
           sudo rm -rf lb .build stage cache auto *.iso build.log 2>/dev/null || true
           sudo lb config \
             --ignore-system-defaults \
+            --mode debian \
+            --initramfs live-boot \
             --distribution bookworm \
             --architectures amd64 \
             --linux-packages none \
