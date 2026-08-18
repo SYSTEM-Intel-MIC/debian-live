@@ -67,7 +67,7 @@ jobs:
             --ignore-system-defaults \
             --distribution bookworm \
             --architectures amd64 \
-            --linux-flavours amd64 \
+            --linux-packages none \
             --archive-areas "main contrib non-free non-free-firmware" \
             --mirror-bootstrap "http://deb.debian.org/debian" \
             --parent-mirror-bootstrap "http://deb.debian.org/debian" \
