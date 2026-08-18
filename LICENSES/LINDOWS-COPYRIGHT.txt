@@ -1,0 +1,9 @@
+Copyright (C) 2026 SYSTEM-Intel-MIC
+
+Unless a file or directory states otherwise, original Lindows integration,
+configuration, branding, build scripts, hooks, documentation, and packaging
+metadata in this repository are licensed under the GNU General Public License
+version 3 or any later version.
+
+Third-party components retain their own copyright and license terms. See
+THIRD-PARTY-NOTICES.md and the upstream source links listed there.

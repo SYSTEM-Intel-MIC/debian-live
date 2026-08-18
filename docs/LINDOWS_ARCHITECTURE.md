@@ -21,12 +21,15 @@ Lindows 是面向 AMD64 的 Debian Bookworm 轻量级 X11 Live 发行版。它�
 
 | 组件 | 源码 | 固定提交 | 集成方式 | 许可状态 |
 |---|---|---|---|---|
-| ElevenDE | 本项目发布的 3.5.1 源码包 | 3.5.1 发布工件 | 在 Bookworm 构建容器中执行其 `build-deb.sh` | MIT；随项目声明。 |
-| LinuxPCManager | SYSTEM-Intel-MIC/LinuxPCManager | `4a744338aff580d4c7260bb00cbebfe8521bcf80` | 仅复制已审查的 Python/Tk 源码与桌面入口，制作本地 DEB。 | README 声明 MIT；仓库根目录未发现许可证文本，因此随镜像提供来源与原始说明。 |
-| linux-regedit | heyManNice/regedit | `0e3de3dcfbf1aca0fbc8dda2be307a1224c0f04f` | Meson/Ninja 构建，制作本地 DEB。 | README 声明 GPL-3.0；镜像保留来源说明。 |
+| ElevenDE | [SYSTEM-Intel-MIC/ElevenDE](https://github.com/SYSTEM-Intel-MIC/ElevenDE) | `80d833958ad84f27b2890160a31d1443fe3c5ba6` | 在 Bookworm 构建容器中从云端固定提交执行 `build-deb.sh` | ElevenDE 自有代码 GPL-3.0-or-later；SAS/Explorer/runbox-linux 按各自上游声明。 |
+| LinuxPCManager | SYSTEM-Intel-MIC/LinuxPCManager | `4a744338aff580d4c7260bb00cbebfe8521bcf80` | 仅复制已审查的 Python/Tk 源码与桌面入口，制作本地 DEB。 | 当前云端页面未显示 LICENSE 文件；不将其重新标为 GPL，随镜像提供来源与原始说明。 |
+| linux-regedit | heyManNice/regedit | `0e3de3dcfbf1aca0fbc8dda2be307a1224c0f04f` | Meson/Ninja 构建，制作本地 DEB。 | 当前云端页面未显示 LICENSE，许可状态未明确；不将其重新标为 GPL。 |
 | lindows-bsod | heyManNice/bsod | `45757f64e6fa2983e92382a2ba8e47b1685d92f9` | Meson/Ninja 构建，安装为按需运行的 root 工具。 | MIT。 |
 | devmgr | daimile2/Device-Manager-But-Linux | `e7e8238cc72a08ce0302e4ffbd529838f49fbed4` | Go 1.24 Bookworm 容器构建 GUI 与 CLI，制作本地 DEB。 | MIT。 |
 | PeaZip | peazip/PeaZip 11.2.0 | 固定官方发布 | 下载 `peazip_11.2.0.LINUX.Qt6-1_amd64.deb`，核对 SHA-256 后安装。 | LGPLv3，随上游 DEB 提供。 |
+| SAS-for-Linux | [macOS-Terminal/SAS-for-Linux](https://github.com/macOS-Terminal/SAS-for-Linux) | `7b933fa` | 随云端 ElevenDE 源码构建。 | 当前上游页面未显示 LICENSE，状态未明确；不由 ElevenDE 根 GPL 自动覆盖。 |
+| Explorer-for-Linux | [macOS-Terminal/Explorer-for-Linux](https://github.com/macOS-Terminal/Explorer-for-Linux) | `4a9e19f` | 随云端 ElevenDE 源码构建。 | 当前上游页面未显示 LICENSE，状态未明确；不由 ElevenDE 根 GPL 自动覆盖。 |
+| runbox-linux | [SYSTEM-Intel-MIC/runbox-linux](https://github.com/SYSTEM-Intel-MIC/runbox-linux) | `a8a4786` | 随云端 ElevenDE 源码构建。 | README 明确 MIT；保留独立 MIT 条款。 |
 
 ## 构建边界与安全原则
 
@@ -42,8 +45,12 @@ Lindows 不安装 GNOME、KDE、task-desktop 或完整办公套件。Calamares �
 
 | 资源 | 已核验信息 | 来源 |
 |---|---|---|
-| LinuxPCManager | README 声明 Debian/Ubuntu 支持、Python 3 + Tkinter 和相关权限工具；README 声明 MIT，但根目录未提供许可证文本。 | <https://github.com/SYSTEM-Intel-MIC/LinuxPCManager> |
-| linux-regedit | README 说明使用 GTK3、json-glib、Meson、Ninja 构建，并声明 GPL-3.0。 | <https://github.com/heyManNice/regedit> |
+| ElevenDE | 云端提交 `80d833958ad84f27b2890160a31d1443fe3c5ba6` 已将 ElevenDE 自有代码声明为 GPL-3.0-or-later，并记录 SAS、Explorer、runbox-linux 上游边界。 | <https://github.com/SYSTEM-Intel-MIC/ElevenDE> |
+| SAS-for-Linux | 当前 `main` 提交 `7b933fa`，页面未显示 LICENSE；许可状态未明确。 | <https://github.com/macOS-Terminal/SAS-for-Linux> |
+| Explorer-for-Linux | 当前 `main` 提交 `4a9e19f`，页面未显示 LICENSE；许可状态未明确。 | <https://github.com/macOS-Terminal/Explorer-for-Linux> |
+| runbox-linux | 当前 `main` 提交 `a8a4786`，README 明确标注 MIT。 | <https://github.com/SYSTEM-Intel-MIC/runbox-linux> |
+| LinuxPCManager | README 声明 Debian/Ubuntu 支持、Python 3 + Tkinter 和相关权限工具；当前页面未显示 LICENSE 文件。 | <https://github.com/SYSTEM-Intel-MIC/LinuxPCManager> |
+| linux-regedit | 当前页面未显示 LICENSE 文件，许可状态未明确。 | <https://github.com/heyManNice/regedit> |
 | bsod | README 说明需要 libdrm、FreeType、fontconfig、libsystemd，且运行时需 root 操作 VT/DRM；仓库 `LICENSE` 为 MIT。 | <https://github.com/heyManNice/bsod> |
 | Device Manager | README 说明 GUI 使用 Fyne、提供 `devmgr`/`devmgr-cli`，危险设备操作通过 pkexec；仓库 `LICENSE` 为 MIT。 | <https://github.com/daimile2/Device-Manager-But-Linux> |
 | Fcitx5 中文 | Debian Bookworm 的 `fcitx5-chinese-addons` 元包依赖拼音和表格输入组件。 | <https://packages.debian.org/bookworm/fcitx5-chinese-addons> |

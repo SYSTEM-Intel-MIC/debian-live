@@ -7,7 +7,8 @@ ROOT="${ROOT:-/workspace}"
 OUT="$ROOT/artifacts"
 PKGS="$OUT/packages"
 WORK="$OUT/work"
-ELEV_ZIP="$ROOT/vendor/elevende-3.5.1-source.zip"
+ELEV_URL="https://github.com/SYSTEM-Intel-MIC/ElevenDE.git"
+ELEV_REV="80d833958ad84f27b2890160a31d1443fe3c5ba6"
 
 PCMANAGER_URL="https://github.com/SYSTEM-Intel-MIC/LinuxPCManager.git"
 PCMANAGER_REV="4a744338aff580d4c7260bb00cbebfe8521bcf80"
@@ -73,14 +74,12 @@ apt-get install -y --no-install-recommends \
     libgtk-3-dev \
     python3 python3-gi gir1.2-gtk-3.0
 
-log "checking vendored ElevenDE source"
-[ -f "$ELEV_ZIP" ] || die "missing $ELEV_ZIP"
-( cd "$ROOT/vendor" && sha256sum -c SHA256SUMS )
-unzip -q "$ELEV_ZIP" -d "$WORK"
-ELEV_SRC="$WORK/elevende-3.5.1"
-[ -x "$ELEV_SRC/build-deb.sh" ] || die "ElevenDE source package is incomplete"
+log "cloning cloud ElevenDE source at fixed GPL-audited revision"
+ELEV_SRC="$WORK/ElevenDE"
+clone_pinned "$ELEV_URL" "$ELEV_REV" "$ELEV_SRC"
+[ -x "$ELEV_SRC/build-deb.sh" ] || die "cloud ElevenDE source package is incomplete"
 
-log "building ElevenDE 3.5.1"
+log "building cloud ElevenDE 3.5.1 from $ELEV_REV"
 (
     cd "$ELEV_SRC"
     BUILD_DIR="$WORK/elevende-build" ./build-deb.sh

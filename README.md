@@ -22,7 +22,7 @@ Lindows 使用固定提交构建第三方组件，避免构建时隐式获取默
 
 | 组件 | 上游项目 | 说明 |
 |---|---|---|
-| ElevenDE | [ElevenDE 3.5.1](https://github.com/SYSTEM-Intel-MIC/debian-live) | Lindows 默认桌面环境。 |
+| ElevenDE | [SYSTEM-Intel-MIC/ElevenDE](https://github.com/SYSTEM-Intel-MIC/ElevenDE) | 云端固定提交 `80d833958ad84f27b2890160a31d1443fe3c5ba6`；ElevenDE 自有代码按 GPL-3.0-or-later 发布，并集成 SAS-for-Linux、Explorer-for-Linux 与 runbox-linux。 |
 | LinuxPCManager | [SYSTEM-Intel-MIC/LinuxPCManager](https://github.com/SYSTEM-Intel-MIC/LinuxPCManager) | Windows 风格电脑管家。 |
 | linux-regedit | [heyManNice/regedit](https://github.com/heyManNice/regedit) | Linux 配置文件的注册表风格浏览器。 |
 | lindows-bsod | [heyManNice/bsod](https://github.com/heyManNice/bsod) | 仅按需启动的 DRM/VT 蓝屏演示工具。 |
@@ -30,6 +30,8 @@ Lindows 使用固定提交构建第三方组件，避免构建时隐式获取默
 | PeaZip | [PeaZip](https://github.com/peazip/PeaZip) | 已固定版本并在构建中校验 SHA-256 的归档管理器。 |
 | Copilot for Linux | [com-in/Copilot-For-Linux](https://github.com/com-in/Copilot-For-Linux) | GPL-3.0；固定 v1.0.0 amd64 DEB 并校验 SHA-256；不会预置 API 密钥。 |
 | Feedback Hub for Linux | [com-in/FeedbackHub-For-Linux](https://github.com/com-in/FeedbackHub-For-Linux) | GPL-3.0；固定源码提交构建本地 GTK DEB，反馈数据保存在本地。 |
+
+Lindows 自有构建脚本、配置、打包元数据、品牌资源、文档和原创集成代码按 **GNU GPL-3.0-or-later** 发布，许可证全文见 [`LICENSE`](LICENSE)。本仓库是聚合发行项目，第三方组件不会因根目录许可证而被重新授权；完整的版权、固定提交、源码获取和独立许可证说明见 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)。其中，ElevenDE 云端仓库的自有代码已在提交 `a3b9c9ed17065cc2452678fd0cfe03deda33ab11` 正式切换为 GPL-3.0-or-later，并在 `80d833958ad84f27b2890160a31d1443fe3c5ba6` 记录 runbox-linux；SAS-for-Linux 与 Explorer-for-Linux 当前上游页面尚未显示明确 LICENSE，runbox-linux 的 README 明确为 MIT，三者均按上游许可状态独立保留。 |
 
 ## 获取构建产物
 
@@ -55,7 +57,7 @@ LiveCD 默认使用 LightDM 自动进入 ElevenDE，并显示 Lindows 原创深�
 git clone https://github.com/SYSTEM-Intel-MIC/debian-live.git lindows
 cd lindows
 
-# 生成 ElevenDE 与第三方组件本地 DEB。
+# 从云端 ElevenDE 固定提交，以及其他固定上游提交生成本地 DEB。
 docker run --rm -v "$PWD:/workspace" -w /workspace \
   golang:1.24-bookworm bash ./scripts/build-lindows-components.sh
 
@@ -68,6 +70,10 @@ sudo apt-get install -y live-build debootstrap squashfs-tools xorriso grub-pc-bi
 sudo lb config --distribution bookworm --architectures amd64 --binary-images iso-hybrid --debian-installer live
 sudo lb build
 ```
+
+## 许可证与第三方声明
+
+本项目的 GPL 许可仅适用于 Lindows 自有代码和已明确按 GPL 发布的组件。MIT、LGPL-3.0 以及许可证尚未明确的上游组件必须保留各自来源与许可边界；不得把聚合 ISO 或 DEB 中的全部文件笼统宣传为 GPL。详见 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) 与 [`docs/license-audit-notes.md`](docs/license-audit-notes.md)。
 
 ## 安全说明
 
