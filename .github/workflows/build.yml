@@ -34,7 +34,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             live-build debootstrap debian-archive-keyring squashfs-tools xorriso grub-pc-bin \
-            grub-efi-amd64-bin mtools dosfstools gpg cpio jq
+            grub-efi-amd64-bin isolinux syslinux syslinux-common syslinux-utils mtools dosfstools gpg cpio jq
           lb --version
           docker --version
 
@@ -110,6 +110,10 @@ jobs:
           EOF
           sudo chmod 755 config/hooks/normal/*.hook.chroot \
             config/includes.chroot/usr/local/bin/lindows-installer
+          sudo cp -f /usr/lib/ISOLINUX/isolinux.bin config/bootloaders/isolinux/isolinux.bin
+          sudo cp -f /usr/lib/syslinux/modules/bios/vesamenu.c32 config/bootloaders/isolinux/vesamenu.c32
+          test -s config/bootloaders/isolinux/isolinux.bin
+          test -s config/bootloaders/isolinux/vesamenu.c32
           sudo find config -maxdepth 4 -type f -printf '%p\n' | sort | head -200
 
       - name: Build Lindows ISO
