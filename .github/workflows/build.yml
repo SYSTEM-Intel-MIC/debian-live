@@ -32,7 +32,7 @@ jobs:
           set -eux
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            live-build debootstrap squashfs-tools xorriso grub-pc-bin \
+            live-build debootstrap debian-archive-keyring squashfs-tools xorriso grub-pc-bin \
             grub-efi-amd64-bin mtools dosfstools gpg cpio jq
           lb --version
           docker --version
@@ -64,10 +64,23 @@ jobs:
           set -euxo pipefail
           sudo rm -rf lb .build stage cache auto *.iso build.log 2>/dev/null || true
           sudo lb config \
+            --ignore-system-defaults \
             --distribution bookworm \
             --architectures amd64 \
             --linux-flavours amd64 \
             --archive-areas "main contrib non-free non-free-firmware" \
+            --mirror-bootstrap "http://deb.debian.org/debian" \
+            --parent-mirror-bootstrap "http://deb.debian.org/debian" \
+            --mirror-chroot "http://deb.debian.org/debian" \
+            --parent-mirror-chroot "http://deb.debian.org/debian" \
+            --mirror-chroot-security "http://security.debian.org/debian-security" \
+            --parent-mirror-chroot-security "http://security.debian.org/debian-security" \
+            --mirror-binary "http://deb.debian.org/debian" \
+            --parent-mirror-binary "http://deb.debian.org/debian" \
+            --mirror-binary-security "http://security.debian.org/debian-security" \
+            --parent-mirror-binary-security "http://security.debian.org/debian-security" \
+            --mirror-debian-installer "http://deb.debian.org/debian" \
+            --keyring-packages "debian-archive-keyring" \
             --binary-images iso-hybrid \
             --bootappend-live "boot=live components splash" \
             --iso-application "Lindows Live" \
