@@ -47,7 +47,7 @@ jobs:
             bash ./scripts/build-lindows-components.sh
           test -f artifacts/packages/elevende_3.5.1_amd64.deb
           test -f artifacts/packages/SHA256SUMS
-          sha256sum -c artifacts/packages/SHA256SUMS
+          ( cd artifacts/packages && sha256sum -c SHA256SUMS )
 
       - name: Stage local packages for the live chroot
         run: |
