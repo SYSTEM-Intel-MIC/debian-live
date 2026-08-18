@@ -1,0 +1,30 @@
+QWidget {
+    color: #eaf6ff;
+    font-family: "Noto Sans CJK SC", "Noto Sans", sans-serif;
+}
+QFrame#sidebarApp, QWidget#sidebarApp {
+    background-color: #082353;
+    border-right: 1px solid #4ab9ee;
+}
+QWidget#navigationApp {
+    background-color: rgba(7, 22, 47, 236);
+    border-top: 1px solid rgba(117, 214, 255, 120);
+}
+QPushButton {
+    background-color: #1678d4;
+    color: #ffffff;
+    border: 1px solid #75d6ff;
+    border-radius: 6px;
+    padding: 7px 16px;
+    min-width: 84px;
+}
+QPushButton:hover { background-color: #2997ed; }
+QPushButton:pressed { background-color: #0d5dab; }
+QPushButton:disabled { background-color: #345173; color: #a9c2d8; border-color: #56728e; }
+QListView, QTreeView, QTableView, QLineEdit, QComboBox {
+    background-color: rgba(7, 24, 53, 220);
+    color: #f5fbff;
+    border: 1px solid rgba(117, 214, 255, 170);
+    border-radius: 4px;
+}
+QLabel { background: transparent; }

@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+
+# live-build injects kernel entries into the template after configuration and
+# hardcodes "Debian GNU/Linux" in those injected labels. Patch only that
+# generated menu before binary checksums and ISO creation.
+GRUB_CFG=binary/boot/grub/grub.cfg
+if [ ! -f "$GRUB_CFG" ]; then
+    echo "Lindows: generated UEFI GRUB configuration is missing" >&2
+    exit 1
+fi
+sed -i 's/Debian GNU\/Linux/Lindows/g' "$GRUB_CFG"
+if grep -q 'Debian GNU/Linux' "$GRUB_CFG"; then
+    echo "Lindows: Debian label remains in UEFI GRUB configuration" >&2
+    exit 1
+fi

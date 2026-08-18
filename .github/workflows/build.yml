@@ -1,3 +1,4 @@
+---
 name: Build Lindows Live ISO
 
 on:
@@ -6,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: lindows-live-${{ github.ref }}
@@ -117,12 +118,31 @@ jobs:
         id: iso
         run: |
           set -euxo pipefail
-          ISO="$(find . -maxdepth 2 -type f \( -name '*Lindows*.iso' -o -name '*.hybrid.iso' \) | head -n1)"
-          test -n "$ISO"
+          ISO_SOURCE="$(find . -maxdepth 2 -type f \( -name '*Lindows*.iso' -o -name '*.hybrid.iso' \) | head -n1)"
+          test -n "$ISO_SOURCE"
+          test -s "$ISO_SOURCE"
+          ISO="Lindows-1.0-amd64-livecd.iso"
+          mv "$ISO_SOURCE" "$ISO"
           test -s "$ISO"
           echo "iso_path=$ISO" >> "$GITHUB_OUTPUT"
-          sha256sum "$ISO" | tee Lindows-1.0-amd64.iso.sha256
-          ls -lh "$ISO" Lindows-1.0-amd64.iso.sha256 build.log
+          sha256sum "$ISO" | tee Lindows-1.0-amd64-livecd.iso.sha256
+          cat > Lindows-1.0-release-notes.md <<EOF
+          # Lindows 1.0 — LiveCD with installer
+
+          Build: ${GITHUB_RUN_NUMBER}
+          Commit: ${GITHUB_SHA}
+
+          This hybrid ISO includes the ElevenDE desktop, Lindows boot and installer branding,
+          Chinese Fcitx5 input support, Firefox ESR, VLC, Image Viewer, PeaZip, and the
+          bundled Windows-style system tools.
+
+          Verify the ISO before writing it to USB:
+
+          \`\`\`sh
+          sha256sum -c Lindows-1.0-amd64-livecd.iso.sha256
+          \`\`\`
+          EOF
+          ls -lh "$ISO" Lindows-1.0-amd64-livecd.iso.sha256 Lindows-1.0-release-notes.md build.log
 
       - name: Upload Lindows ISO and verification artifacts
         uses: actions/upload-artifact@v4
@@ -130,7 +150,8 @@ jobs:
           name: Lindows-1.0-amd64-livecd-with-installer-${{ github.run_number }}
           path: |
             ${{ steps.iso.outputs.iso_path }}
-            Lindows-1.0-amd64.iso.sha256
+            Lindows-1.0-amd64-livecd.iso.sha256
+            Lindows-1.0-release-notes.md
             build.log
             artifacts/packages/SHA256SUMS
           if-no-files-found: error
@@ -145,6 +166,19 @@ jobs:
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
+
+      - name: Publish Lindows ISO to GitHub Releases
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: lindows-1.0-build-${{ github.run_number }}
+          name: Lindows 1.0 Build ${{ github.run_number }}
+          body_path: Lindows-1.0-release-notes.md
+          prerelease: true
+          files: |
+            ${{ steps.iso.outputs.iso_path }}
+            Lindows-1.0-amd64-livecd.iso.sha256
+            Lindows-1.0-release-notes.md
 
       - name: Cleanup runner disk
         if: always()

@@ -9,8 +9,8 @@
 | 分类 | Lindows 提供内容 |
 |---|---|
 | 桌面与会话 | ElevenDE 3.5.1、Openbox、picom、LightDM GTK Greeter、Xorg、NetworkManager。 |
-| 发行版品牌 | `Lindows 1.0 (Bookworm)`、SYSTEM-Intel-MIC 作者标识、Lindows ISO 标签和 Lindows Live 安装入口。 |
-| 安装程序 | Calamares 图形化安装器，桌面和应用菜单均提供“安装 Lindows”入口；ISO 启动菜单还保留 Debian Installer Live 机制。 |
+| 发行版品牌 | `Lindows 1.0 (Bookworm)`、SYSTEM-Intel-MIC 作者标识、原创深蓝桌面壁纸、BIOS/UEFI Live 启动菜单和已安装系统 GRUB Lindows 主题。 |
+| 安装程序 | Calamares 图形化安装器使用 Lindows 名称、标志、壁纸和引导项名称；桌面和应用菜单均提供“安装 Lindows”入口。 |
 | 中文支持 | Fcitx5、中文扩展、拼音、Noto CJK；GTK、Qt 和 XIM 环境变量已预配置。 |
 | 日常软件 | Firefox ESR、VLC、Eye of GNOME 图片查看器、PeaZip Qt6。 |
 | Windows 风格工具 | LinuxPCManager、linux-regedit、Lindows 蓝屏演示工具、Device Manager for Linux。 |
@@ -30,19 +30,19 @@ Lindows 使用固定提交构建第三方组件，避免构建时隐式获取默
 
 ## 获取构建产物
 
-1. 打开仓库的 **Actions** 页面并选择最新的 **Build Lindows Live ISO** 工作流。
-2. 在成功运行的 Artifacts 中下载 `Lindows-1.0-amd64-livecd-with-installer-*`。
-3. 下载其中的 `Lindows-1.0-amd64.iso.sha256`，在本机验证 ISO：
+1. 打开仓库的 [Releases](https://github.com/SYSTEM-Intel-MIC/debian-live/releases) 页面，下载最新预发布版本中的 `Lindows-1.0-amd64-livecd.iso` 和对应 SHA-256 文件。
+2. 在本机验证 ISO：
 
 ```sh
-sha256sum -c Lindows-1.0-amd64.iso.sha256
+sha256sum -c Lindows-1.0-amd64-livecd.iso.sha256
 ```
 
-4. 将 ISO 写入 USB 后启动 LiveCD。进入桌面后点击“安装 Lindows”即可启动图形化安装器。
+3. 将 ISO 写入 USB 后启动 LiveCD。BIOS 与 UEFI 启动菜单均显示 Lindows 名称；进入桌面后点击“安装 Lindows”即可启动图形化安装器。
+4. 每次 `main` 分支构建成功后，工作流会同步保留 Actions Artifact；若 Release 暂不可用，可下载 `Lindows-1.0-amd64-livecd-with-installer-*` Artifact 作为备用。
 
 ## 默认 Live 会话
 
-LiveCD 默认使用 LightDM 自动进入 ElevenDE。Fcitx5 会随桌面启动，输入法环境同时适用于 GTK、Qt 和传统 Xlib 程序。首次运行时可以在 Fcitx5 配置中调整输入法、切换键和候选词行为。
+LiveCD 默认使用 LightDM 自动进入 ElevenDE，并显示 Lindows 原创深蓝壁纸。Fcitx5 会随桌面启动，输入法环境同时适用于 GTK、Qt 和传统 Xlib 程序。首次运行时可以在 Fcitx5 配置中调整输入法、切换键和候选词行为。
 
 ## 本地构建
 
@@ -68,7 +68,7 @@ sudo lb build
 
 ## 安全说明
 
-Lindows 不会自动执行系统清理、设备驱动卸载/更新或蓝屏演示。电脑管家、设备管理器、注册表编辑器和蓝屏演示工具均要求用户显式启动；涉及系统权限的操作应通过图形化授权边界执行。蓝屏演示工具默认以恢复桌面模式启动，不被注册为守护进程，也不会根据日志自动触发。
+Lindows 不会自动执行系统清理、设备驱动卸载/更新或蓝屏演示。电脑管家、设备管理器、注册表编辑器和蓝屏演示工具均要求用户显式启动；涉及系统权限的操作应通过图形化授权边界执行。蓝屏演示桌面入口强制携带 `--restore` 参数：动画结束后恢复原图形桌面并退出，**不会重启系统**；它不被注册为守护进程，也不会根据日志自动触发。
 
 ## 维护者
 

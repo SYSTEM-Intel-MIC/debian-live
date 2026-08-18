@@ -1,0 +1,34 @@
+---
+componentName: lindows
+welcomeStyleCalamares: false
+welcomeExpandingLogo: true
+windowExpanding: normal
+windowSize: 1024px,650px
+windowPlacement: center
+sidebar: widget
+navigation: widget
+
+strings:
+    productName: Lindows
+    shortProductName: Lindows
+    version: "1.0"
+    shortVersion: "1.0"
+    versionedName: Lindows 1.0
+    shortVersionedName: Lindows 1.0
+    bootloaderEntryName: Lindows
+    productUrl: https://github.com/SYSTEM-Intel-MIC/debian-live
+    supportUrl: https://github.com/SYSTEM-Intel-MIC/debian-live/issues
+    knownIssuesUrl: https://github.com/SYSTEM-Intel-MIC/debian-live/issues
+    releaseNotesUrl: https://github.com/SYSTEM-Intel-MIC/debian-live/releases
+
+images:
+    productIcon: "lindows-mark.svg"
+    productLogo: "lindows-mark.svg"
+    productWallpaper: "lindows-aurora-wallpaper.png"
+    productWelcome: "lindows-mark.svg"
+
+style:
+    sidebarBackground: "#082353"
+    sidebarText: "#EAF6FF"
+    sidebarTextSelect: "#07162F"
+    sidebarTextHighlight: "#75D6FF"

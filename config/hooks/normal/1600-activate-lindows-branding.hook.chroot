@@ -1,0 +1,43 @@
+#!/bin/sh
+set -eu
+
+# calamares-settings-debian supplies the tested Debian module sequence. Keep
+# that sequence but replace its selected branding component with Lindows.
+SETTINGS=/etc/calamares/settings.conf
+if [ ! -f "$SETTINGS" ]; then
+    echo "Lindows: Calamares settings are missing" >&2
+    exit 1
+fi
+if grep -qE '^[[:space:]]*branding:' "$SETTINGS"; then
+    sed -i -E 's|^([[:space:]]*branding:)[[:space:]]*.*$|\1 lindows|' "$SETTINGS"
+else
+    echo "Lindows: Calamares settings have no branding selector" >&2
+    exit 1
+fi
+
+# The default ElevenDE fallback makes the brand wallpaper available even if a
+# Live-user skeleton is not copied by a particular live-config profile.
+install -Dm644 /usr/share/lindows/branding/lindows-aurora-wallpaper.png \
+    /usr/local/share/elevende-shell/wallpaper.png
+install -Dm644 /usr/share/lindows/branding/lindows-aurora-wallpaper.png \
+    /etc/skel/.local/share/elevende/wallpaper.png
+
+# Keep human-readable system identity coherent outside the desktop itself.
+printf 'Lindows 1.0 \\n \\l\n' > /etc/issue
+printf 'Lindows 1.0\n' > /etc/issue.net
+
+# grub-mkconfig reads /etc/default/grub itself rather than drop-in files.
+# Append final assignments so both Live inspection and the installed target use
+# the Lindows bootloader identity and theme when update-grub is invoked.
+if [ -f /etc/default/grub ]; then
+    cat >> /etc/default/grub <<'EOF'
+
+# Lindows bootloader identity and presentation.
+GRUB_DISTRIBUTOR="Lindows"
+GRUB_THEME="/boot/grub/themes/lindows/theme.txt"
+GRUB_TIMEOUT_STYLE=menu
+GRUB_TIMEOUT=6
+GRUB_DEFAULT=0
+GRUB_DISABLE_OS_PROBER=false
+EOF
+fi

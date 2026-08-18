@@ -122,18 +122,24 @@ meson setup "$BSOD/build" "$BSOD" --buildtype=release
 meson compile -C "$BSOD/build"
 STAGE="$WORK/pkg-lindows-bsod"
 install -Dm755 "$BSOD/build/bsod" "$STAGE/usr/local/sbin/lindows-bsod"
+install -Dm755 /dev/stdin "$STAGE/usr/local/bin/lindows-bsod-demo" <<'LAUNCH'
+#!/bin/sh
+# The Lindows menu entry is deliberately a reversible demonstration.
+# --restore overrides upstream's default reboot behavior after the animation.
+exec /usr/local/sbin/lindows-bsod --restore --show "Lindows demonstration"
+LAUNCH
 install -Dm644 /dev/stdin "$STAGE/usr/share/applications/lindows-bsod.desktop" <<'DESKTOP'
 [Desktop Entry]
 Type=Application
 Name=Lindows Blue Screen Demo
 Name[zh_CN]=Lindows 蓝屏演示
 Comment=Show a temporary blue-screen demonstration and restore the desktop
-Exec=pkexec lindows-bsod --restore --show "Lindows demonstration"
+Exec=pkexec /usr/local/bin/lindows-bsod-demo
 Icon=dialog-warning
 Terminal=false
 Categories=System;
 DESKTOP
-make_deb "lindows-bsod" "1.0.1+lindows1" "libdrm2, libfreetype6, libfontconfig1, libsystemd0" "$STAGE" "Lindows blue-screen demonstration tool"
+make_deb "lindows-bsod" "1.0.2+lindows1" "libdrm2, libfreetype6, libfontconfig1, libsystemd0" "$STAGE" "Lindows blue-screen demonstration tool"
 
 log "building Device Manager package"
 DEVMGR="$WORK/devmgr"

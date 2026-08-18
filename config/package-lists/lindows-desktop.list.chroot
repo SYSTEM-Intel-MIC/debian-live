@@ -61,7 +61,12 @@ firefox-esr
 vlc
 eog
 calamares
+calamares-settings-debian
 parted
+grub-pc
+grub-efi-amd64
+efibootmgr
+os-prober
 
 # Runtime dependencies of integrated system tools
 python3
