@@ -140,6 +140,9 @@ DEVMGR="$WORK/devmgr"
 clone_pinned "$DEVMGR_URL" "$DEVMGR_REV" "$DEVMGR"
 (
     cd "$DEVMGR"
+    # The pinned upstream revision intentionally does not track go.sum.
+    # Resolve and record module checksums in the disposable build tree first.
+    go mod tidy
     go mod download
     CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o devmgr ui.go
     go build -trimpath -ldflags="-s -w" -o devmgr-cli cli.go
