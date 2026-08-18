@@ -13,6 +13,7 @@
 | 安装程序 | Calamares 图形化安装器使用 Lindows 名称、标志、壁纸和引导项名称；桌面和应用菜单均提供“安装 Lindows”入口。 |
 | 中文支持 | Fcitx5、中文扩展、拼音、Noto CJK；GTK、Qt 和 XIM 环境变量已预配置。 |
 | 日常软件 | Firefox ESR、VLC、Eye of GNOME 图片查看器、PeaZip Qt6。 |
+| Lindows 服务应用 | Copilot for Linux AI 桌面面板、Feedback Hub for Linux 本地反馈中心。 |
 | Windows 风格工具 | LinuxPCManager、linux-regedit、Lindows 蓝屏演示工具、Device Manager for Linux。 |
 
 ## 组件来源与许可
@@ -27,6 +28,8 @@ Lindows 使用固定提交构建第三方组件，避免构建时隐式获取默
 | lindows-bsod | [heyManNice/bsod](https://github.com/heyManNice/bsod) | 仅按需启动的 DRM/VT 蓝屏演示工具。 |
 | Device Manager | [daimile2/Device-Manager-But-Linux](https://github.com/daimile2/Device-Manager-But-Linux) | Windows 风格硬件与驱动查看工具。 |
 | PeaZip | [PeaZip](https://github.com/peazip/PeaZip) | 已固定版本并在构建中校验 SHA-256 的归档管理器。 |
+| Copilot for Linux | [com-in/Copilot-For-Linux](https://github.com/com-in/Copilot-For-Linux) | GPL-3.0；固定 v1.0.0 amd64 DEB 并校验 SHA-256；不会预置 API 密钥。 |
+| Feedback Hub for Linux | [com-in/FeedbackHub-For-Linux](https://github.com/com-in/FeedbackHub-For-Linux) | GPL-3.0；固定源码提交构建本地 GTK DEB，反馈数据保存在本地。 |
 
 ## 获取构建产物
 
@@ -68,7 +71,7 @@ sudo lb build
 
 ## 安全说明
 
-Lindows 不会自动执行系统清理、设备驱动卸载/更新或蓝屏演示。电脑管家、设备管理器、注册表编辑器和蓝屏演示工具均要求用户显式启动；涉及系统权限的操作应通过图形化授权边界执行。蓝屏演示桌面入口强制携带 `--restore` 参数：动画结束后恢复原图形桌面并退出，**不会重启系统**；它不被注册为守护进程，也不会根据日志自动触发。
+Lindows 不会自动执行系统清理、设备驱动卸载/更新或蓝屏演示。Copilot 不包含任何预置 API 密钥，用户必须自行配置服务地址和凭据；Feedback Hub 的反馈数据仅由本地应用保存。电脑管家、设备管理器、注册表编辑器和蓝屏演示工具均要求用户显式启动；涉及系统权限的操作应通过图形化授权边界执行。蓝屏演示桌面入口强制携带 `--restore` 参数：动画结束后恢复原图形桌面并退出，**不会重启系统**；它不被注册为守护进程，也不会根据日志自动触发。
 
 ## 维护者
 

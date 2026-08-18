@@ -19,6 +19,10 @@ DEVMGR_URL="https://github.com/daimile2/Device-Manager-But-Linux.git"
 DEVMGR_REV="e7e8238cc72a08ce0302e4ffbd529838f49fbed4"
 PEAZIP_URL="https://github.com/peazip/PeaZip/releases/download/11.2.0/peazip_11.2.0.LINUX.Qt6-1_amd64.deb"
 PEAZIP_SHA256="11af7ca6fd633566eb8de969b43ca257b8bce759421775c8c7bbb66105406e58"
+COPILOT_URL="https://github.com/com-in/Copilot-For-Linux/releases/download/v1.0.0/copilot-for-linux_1.0.0_amd64.deb"
+COPILOT_SHA256="744120cc972fe66b0e1040a526943f8d8daa92de272d6cec4e3bcad9acfa0158"
+FEEDBACKHUB_URL="https://github.com/com-in/FeedbackHub-For-Linux.git"
+FEEDBACKHUB_REV="67befa32fc742a9a33080b0c2afa8f95f40ee3d9"
 
 log() { printf '\n==> %s\n' "$*"; }
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
@@ -66,7 +70,8 @@ apt-get install -y --no-install-recommends \
     xorg-dev libxi-dev libxtst-dev libdbus-1-dev libcrypt-dev \
     libgdk-pixbuf-2.0-dev librsvg2-bin qt6-base-dev qt6-svg-dev \
     libgl1-mesa-dev libpng-dev libxft-dev libx11-dev libfontconfig1-dev \
-    libgtk-3-dev
+    libgtk-3-dev \
+    python3 python3-gi gir1.2-gtk-3.0
 
 log "checking vendored ElevenDE source"
 [ -f "$ELEV_ZIP" ] || die "missing $ELEV_ZIP"
@@ -168,6 +173,30 @@ Terminal=false
 Categories=System;Settings;HardwareSettings;
 DESKTOP
 make_deb "lindows-device-manager" "0.1.0+lindows1" "libgl1, libx11-6, libxrandr2, libxinerama1, libxcursor1, libxi6, policykit-1, pciutils, usbutils" "$STAGE" "Windows-style Linux device manager"
+
+log "building Feedback Hub for Linux package"
+FEEDBACKHUB="$WORK/feedbackhub"
+clone_pinned "$FEEDBACKHUB_URL" "$FEEDBACKHUB_REV" "$FEEDBACKHUB"
+STAGE="$WORK/pkg-feedbackhub"
+mkdir -p "$STAGE/usr/lib/feedbackhub" "$STAGE/usr/bin" \
+    "$STAGE/usr/share/applications" "$STAGE/usr/share/icons/hicolor/scalable/apps"
+cp -a "$FEEDBACKHUB/feedbackhub/." "$STAGE/usr/lib/feedbackhub/"
+find "$STAGE/usr/lib/feedbackhub" -type d -name '__pycache__' -prune -exec rm -rf {} +
+find "$STAGE/usr/lib/feedbackhub" -type f -name '*.pyc' -delete
+install -Dm755 /dev/stdin "$STAGE/usr/bin/feedbackhub" <<'LAUNCH'
+#!/bin/sh
+exec python3 -c 'import sys; sys.path.insert(0, "/usr/lib/feedbackhub"); from feedbackhub.app import run; raise SystemExit(run())' "$@"
+LAUNCH
+install -Dm644 "$FEEDBACKHUB/feedbackhub.desktop" "$STAGE/usr/share/applications/feedbackhub.desktop"
+install -Dm644 "$FEEDBACKHUB/feedbackhub/assets/icon.svg" \
+    "$STAGE/usr/share/icons/hicolor/scalable/apps/feedbackhub.svg"
+install -Dm644 "$FEEDBACKHUB/README.md" "$STAGE/usr/share/doc/feedbackhub/README.md"
+make_deb "feedbackhub" "1.0.0+lindows1" "python3, python3-gi, gir1.2-gtk-3.0" "$STAGE" "Local Feedback Hub for Lindows"
+
+log "downloading fixed Copilot for Linux package"
+COPILOT_DEB="$PKGS/copilot-for-linux_1.0.0_amd64.deb"
+curl --fail --location --retry 3 --output "$COPILOT_DEB" "$COPILOT_URL"
+printf '%s  %s\n' "$COPILOT_SHA256" "$(basename "$COPILOT_DEB")" | (cd "$PKGS" && sha256sum -c -)
 
 log "downloading fixed PeaZip package"
 curl --fail --location --retry 3 --output "$PKGS/peazip_11.2.0.LINUX.Qt6-1_amd64.deb" "$PEAZIP_URL"

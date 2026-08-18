@@ -23,5 +23,7 @@ Lindows bundled components
 - linux-regedit (fixed source revision)
 - lindows-bsod (fixed source revision; never enabled as a service)
 - lindows-device-manager (fixed source revision)
+- Copilot for Linux 1.0.0 amd64 DEB (SHA-256 verified; no API key)
+- Feedback Hub for Linux 1.0.0 (fixed source revision; local data)
 - PeaZip 11.2.0 Qt6 official DEB
 EOF
