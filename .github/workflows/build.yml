@@ -82,6 +82,7 @@ jobs:
             --parent-mirror-binary "http://deb.debian.org/debian" \
             --mirror-binary-security "http://security.debian.org/debian-security" \
             --parent-mirror-binary-security "http://security.debian.org/debian-security" \
+            --security false \
             --mirror-debian-installer "http://deb.debian.org/debian" \
             --keyring-packages "debian-archive-keyring" \
             --binary-images iso-hybrid \
