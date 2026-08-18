@@ -72,7 +72,7 @@ jobs:
             --initramfs live-boot \
             --distribution bookworm \
             --architectures amd64 \
-            --linux-packages none \
+            --linux-packages linux-image \
             --archive-areas "main contrib non-free non-free-firmware" \
             --mirror-bootstrap "http://deb.debian.org/debian" \
             --parent-mirror-bootstrap "http://deb.debian.org/debian" \
