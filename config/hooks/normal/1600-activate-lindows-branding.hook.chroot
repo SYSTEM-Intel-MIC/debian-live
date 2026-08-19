@@ -32,6 +32,30 @@ install -Dm644 /usr/share/lindows/branding/lindows-aurora-wallpaper.png \
 install -Dm644 /usr/share/lindows/branding/lindows-aurora-wallpaper.png \
     /etc/skel/.local/share/elevende/wallpaper.png
 
+# Make the Live session and Calamares use Simplified Chinese by default.
+if [ -f /etc/locale.gen ]; then
+    sed -i -E 's/^#[[:space:]]*(zh_CN.UTF-8[[:space:]]+UTF-8)/\1/' /etc/locale.gen
+    locale-gen zh_CN.UTF-8
+fi
+cat > /etc/default/locale <<'EOF'
+LANG=zh_CN.UTF-8
+LANGUAGE=zh_CN:zh
+LC_MESSAGES=zh_CN.UTF-8
+EOF
+
+# Remove Debian's generic installer launcher from the application menu. The
+# Lindows-branded Calamares entry remains the only graphical installer entry.
+for dir in /usr/share/applications /etc/xdg/autostart /etc/skel/Desktop; do
+    [ -d "$dir" ] || continue
+    find "$dir" -maxdepth 1 -type f -name '*.desktop' -print0 2>/dev/null | while IFS= read -r -d '' entry; do
+        if grep -qiE '(^Name(\[[^]]+\])?=.*(Install Debian|Debian Installer))|debian-installer-launcher|debian-installer.desktop' "$entry" 2>/dev/null; then
+            rm -f "$entry"
+        fi
+    done
+done
+chmod 0755 '/etc/skel/Desktop/Install Lindows.desktop' 2>/dev/null || true
+chmod 0755 /usr/share/applications/lindows-installer.desktop 2>/dev/null || true
+
 # Keep human-readable system identity coherent outside the desktop itself.
 printf 'Lindows 1.0 \\n \\l\n' > /etc/issue
 printf 'Lindows 1.0\n' > /etc/issue.net
