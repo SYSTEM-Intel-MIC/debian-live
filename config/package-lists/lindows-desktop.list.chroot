@@ -1,8 +1,7 @@
 # Lindows core: Debian Bookworm AMD64, minimal X11 and ElevenDE session
 live-boot
 live-config
-live-config-systemd
-systemd-sysv
+live-config-sysvinit
 linux-image-amd64
 firmware-linux
 firmware-iwlwifi
