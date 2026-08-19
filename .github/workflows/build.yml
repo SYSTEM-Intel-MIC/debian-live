@@ -110,18 +110,68 @@ jobs:
           EOF
           sudo chmod 755 config/hooks/normal/*.hook.chroot \
             config/includes.chroot/usr/local/bin/lindows-installer
+          # Keep isolinux.bin and every COM32 runtime module from the same
+          # syslinux package. In particular, isolinux.cfg -> vesamenu.c32
+          # requires ldlinux.c32, libcom32.c32 and libutil.c32 at boot time.
           sudo cp -f /usr/lib/ISOLINUX/isolinux.bin config/bootloaders/isolinux/isolinux.bin
-          sudo cp -f /usr/lib/syslinux/modules/bios/vesamenu.c32 config/bootloaders/isolinux/vesamenu.c32
+          sudo cp -f /usr/lib/syslinux/modules/bios/*.c32 config/bootloaders/isolinux/
           test -s config/bootloaders/isolinux/isolinux.bin
+          test -s config/bootloaders/isolinux/ldlinux.c32
+          test -s config/bootloaders/isolinux/libcom32.c32
+          test -s config/bootloaders/isolinux/libutil.c32
           test -s config/bootloaders/isolinux/vesamenu.c32
           sudo find config -maxdepth 4 -type f -printf '%p\n' | sort | head -200
 
       - name: Build Lindows ISO
         run: |
-          set -o pipefail
+          set -euxo pipefail
           echo "Lindows build started: $(date --iso-8601=seconds)" | tee build.log
           sudo lb build 2>&1 | tee -a build.log
-          echo "Lindows build finished: $(date --iso-8601=seconds)" | tee -a build.log
+
+          # live-build's Debian Bookworm syslinux mode creates the BIOS image
+          # but does not add an EFI System Partition. Repack the same binary/
+          # tree with a standalone GRUB x86_64 EFI executable so the ISO boots
+          # on both legacy BIOS and UEFI firmware.
+          ISO_SOURCE="$(find . -maxdepth 2 -type f \( -name '*Lindows*.iso' -o -name '*.hybrid.iso' \) | head -n1)"
+          test -n "$ISO_SOURCE"
+          EFI_WORK="$(mktemp -d)"
+          EFI_CFG="$EFI_WORK/grub.cfg"
+          EFI_BIN="$EFI_WORK/BOOTX64.EFI"
+          EFI_IMG="$EFI_WORK/efi.img"
+          cat > "$EFI_CFG" <<'EOF'
+          set timeout=12
+          set default=0
+          insmod iso9660
+          insmod search
+          insmod linux
+          insmod normal
+          search --no-floppy --file --set=root /live/vmlinuz
+          menuentry "Start Lindows Live" {
+            linux /live/vmlinuz boot=live components splash
+            initrd /live/initrd.img
+          }
+          menuentry "Lindows Live (safe graphics)" {
+            linux /live/vmlinuz boot=live components splash nomodeset
+            initrd /live/initrd.img
+          }
+          EOF
+          grub-mkstandalone -O x86_64-efi -o "$EFI_BIN" \
+            --modules="iso9660 search linux normal" \
+            "boot/grub/grub.cfg=$EFI_CFG"
+          truncate -s 16M "$EFI_IMG"
+          sudo mkfs.vfat -F 16 "$EFI_IMG"
+          mmd -i "$EFI_IMG" ::/EFI ::/EFI/BOOT
+          mcopy -i "$EFI_IMG" "$EFI_BIN" ::/EFI/BOOT/BOOTX64.EFI
+          REPACKED="${ISO_SOURCE}.dualboot"
+          sudo xorriso -as mkisofs -r -J -V "LINDOWS 1.0" \
+            -o "$REPACKED" \
+            -b isolinux/isolinux.bin -c isolinux/boot.cat \
+            -no-emul-boot -boot-load-size 4 -boot-info-table \
+            -eltorito-alt-boot -e efi.img -no-emul-boot \
+            -isohybrid-gpt-basdat binary "$EFI_IMG" 2>&1 | tee -a build.log
+          mv "$REPACKED" "$ISO_SOURCE"
+          rm -rf "$EFI_WORK"
+          echo "Lindows dual BIOS/UEFI ISO finished: $(date --iso-8601=seconds)" | tee -a build.log
 
       - name: Verify Lindows ISO
         id: iso
@@ -134,6 +184,12 @@ jobs:
           mv "$ISO_SOURCE" "$ISO"
           test -s "$ISO"
           echo "iso_path=$ISO" >> "$GITHUB_OUTPUT"
+          # Inspect the final ISO rather than trusting the live-build log.
+          xorriso -indev "$ISO" -report_el_torito plain 2>&1 | tee iso-boot-report.txt
+          xorriso -indev "$ISO" -find / -name ldlinux.c32 -print 2>/dev/null | grep -q 'ldlinux.c32'
+          xorriso -indev "$ISO" -find / -name vesamenu.c32 -print 2>/dev/null | grep -q 'vesamenu.c32'
+          xorriso -indev "$ISO" -find / -name efi.img -print 2>/dev/null | grep -q 'efi.img'
+          grep -q -E 'El Torito boot img|EFI|efi.img|isolinux' iso-boot-report.txt
           sha256sum "$ISO" | tee Lindows-1.0-amd64-livecd.iso.sha256
           cat > Lindows-1.0-release-notes.md <<EOF
           # Lindows 1.0 — LiveCD with installer
@@ -162,6 +218,7 @@ jobs:
             Lindows-1.0-amd64-livecd.iso.sha256
             Lindows-1.0-release-notes.md
             build.log
+            iso-boot-report.txt
             artifacts/packages/SHA256SUMS
           if-no-files-found: error
           retention-days: 14
