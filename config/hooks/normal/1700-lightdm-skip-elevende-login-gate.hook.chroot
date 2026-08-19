@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+# LightDM already authenticates (and, for the Live image, autologs) the user.
+# The ElevenDE session also supports startx, where its own login gate is useful,
+# but showing that gate inside a LightDM session causes a second password prompt
+# and makes automatic login appear to fail. Remove only that redundant block.
+SESSION=/usr/local/bin/elevende-session
+if [ -f "$SESSION" ]; then
+    sed -i '/^# Login gate: show a Win11-style login screen/,/^fi$/d' "$SESSION"
+fi
