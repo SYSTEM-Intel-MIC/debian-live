@@ -33,8 +33,14 @@ jobs:
           set -euxo pipefail
           export DEBIAN_FRONTEND=noninteractive
           # Avoid the intermittently stalled Azure Ubuntu mirror on hosted
-          # runners; use the public archive mirror for deterministic setup.
-          sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources 2>/dev/null || true
+          # runners; replace all runner sources with a minimal public archive
+          # configuration for deterministic setup.
+          sudo rm -f /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources
+          cat <<'EOF' | sudo tee /etc/apt/sources.list
+          deb http://archive.ubuntu.com/ubuntu noble main restricted universe multiverse
+          deb http://archive.ubuntu.com/ubuntu noble-updates main restricted universe multiverse
+          deb http://archive.ubuntu.com/ubuntu noble-security main restricted universe multiverse
+          EOF
           # GitHub-hosted runners occasionally stall on a transient mirror
           # connection; fail fast and retry instead of consuming the whole job.
           sudo timeout 12m apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=60 update
