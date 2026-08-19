@@ -77,12 +77,12 @@ apt-get install -y --no-install-recommends \
 log "cloning cloud ElevenDE source at fixed GPL-audited revision"
 ELEV_SRC="$WORK/ElevenDE"
 clone_pinned "$ELEV_URL" "$ELEV_REV" "$ELEV_SRC"
-[ -x "$ELEV_SRC/build-deb.sh" ] || die "cloud ElevenDE source package is incomplete"
+[ -f "$ELEV_SRC/build-deb.sh" ] || die "cloud ElevenDE source package is incomplete"
 
 log "building cloud ElevenDE 3.5.1 from $ELEV_REV"
 (
     cd "$ELEV_SRC"
-    BUILD_DIR="$WORK/elevende-build" ./build-deb.sh
+    BUILD_DIR="$WORK/elevende-build" bash ./build-deb.sh
     cp elevende_3.5.1_amd64.deb "$PKGS/"
 )
 
