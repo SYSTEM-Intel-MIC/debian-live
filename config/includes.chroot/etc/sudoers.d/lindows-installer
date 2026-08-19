@@ -1,0 +1,2 @@
+# Lindows Live installer: only the graphical installer may be elevated.
+user ALL=(root) NOPASSWD: /usr/bin/calamares
