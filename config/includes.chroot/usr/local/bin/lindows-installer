@@ -6,7 +6,7 @@ if ! command -v calamares >/dev/null 2>&1; then
     exit 1
 fi
 
-# Calamares needs administrative access to partition and install. A narrowly
-# scoped Polkit rule grants only the Live `user` permission to run this one
-# installer binary, so the graphical entry does not silently exit on auth.
-exec /usr/bin/pkexec /usr/bin/calamares "$@"
+# In the disposable LiveCD, the dedicated sudoers rule grants only this
+# installer binary passwordless root execution. This avoids asking the Live
+# user for a password that does not exist while keeping other commands unprivileged.
+exec /usr/bin/sudo -n /usr/bin/calamares "$@"
