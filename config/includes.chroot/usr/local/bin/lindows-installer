@@ -15,4 +15,4 @@ export DISPLAY="${DISPLAY:-:0}"
 if [ -z "${XAUTHORITY:-}" ] && [ -f "/home/user/.Xauthority" ]; then
     export XAUTHORITY=/home/user/.Xauthority
 fi
-exec /usr/bin/sudo -n /usr/bin/calamares "$@"
+exec /usr/bin/sudo -n -E /usr/bin/calamares "$@"
