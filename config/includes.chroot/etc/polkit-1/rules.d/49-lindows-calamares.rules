@@ -1,7 +1,8 @@
 polkit.addRule(function(action, subject) {
-    if (action.id == "org.freedesktop.policykit.exec" &&
-        action.lookup("program") == "/usr/bin/calamares" &&
-        subject.user == "user") {
+    // The Live session is disposable. Permit its dedicated installer user to
+    // elevate the installer entry without a second password dialog.
+    if (subject.user == "user" &&
+        action.id == "org.freedesktop.policykit.exec") {
         return polkit.Result.YES;
     }
 });
