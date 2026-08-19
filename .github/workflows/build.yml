@@ -186,10 +186,15 @@ jobs:
           echo "iso_path=$ISO" >> "$GITHUB_OUTPUT"
           # Inspect the final ISO rather than trusting the live-build log.
           xorriso -indev "$ISO" -report_el_torito plain 2>&1 | tee iso-boot-report.txt
-          xorriso -indev "$ISO" -find / -name ldlinux.c32 -print 2>/dev/null | grep -q 'ldlinux.c32'
-          xorriso -indev "$ISO" -find / -name vesamenu.c32 -print 2>/dev/null | grep -q 'vesamenu.c32'
-          xorriso -indev "$ISO" -find / -name efi.img -print 2>/dev/null | grep -q 'efi.img'
-          grep -q -E 'El Torito boot img|EFI|efi.img|isolinux' iso-boot-report.txt
+          BOOT_CHECK="$(mktemp -d)"
+          xorriso -osirrox on -indev "$ISO" -extract /isolinux/ldlinux.c32 "$BOOT_CHECK/ldlinux.c32" >/dev/null 2>&1
+          xorriso -osirrox on -indev "$ISO" -extract /isolinux/vesamenu.c32 "$BOOT_CHECK/vesamenu.c32" >/dev/null 2>&1
+          xorriso -osirrox on -indev "$ISO" -extract /efi.img "$BOOT_CHECK/efi.img" >/dev/null 2>&1
+          test -s "$BOOT_CHECK/ldlinux.c32"
+          test -s "$BOOT_CHECK/vesamenu.c32"
+          test -s "$BOOT_CHECK/efi.img"
+          rm -rf "$BOOT_CHECK"
+          grep -q -E 'El Torito boot img.*BIOS|El Torito boot img.*UEFI|EFI|efi.img|isolinux' iso-boot-report.txt
           sha256sum "$ISO" | tee Lindows-1.0-amd64-livecd.iso.sha256
           cat > Lindows-1.0-release-notes.md <<EOF
           # Lindows 1.0 — LiveCD with installer
