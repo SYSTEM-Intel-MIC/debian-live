@@ -11,6 +11,9 @@ fi
 # user for a password that does not exist while keeping other commands unprivileged.
 # Preserve a usable X11 session even when the wrapper is started from a desktop
 # file through a privilege boundary.
+export LANG=zh_CN.UTF-8
+export LANGUAGE=zh_CN:zh
+export LC_ALL=zh_CN.UTF-8
 export DISPLAY="${DISPLAY:-:0}"
 if [ -z "${XAUTHORITY:-}" ] && [ -f "/home/user/.Xauthority" ]; then
     export XAUTHORITY=/home/user/.Xauthority

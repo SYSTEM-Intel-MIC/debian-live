@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+
+# calamares-settings-debian installs a Debian-branded launcher after some
+# package stages. Remove the concrete desktop files at the end of chroot
+# customization; Lindows exposes only its own branded installer.
+rm -f /usr/share/applications/install-debian.desktop
+rm -f /usr/share/applications/debian-installer.desktop
+rm -f /usr/share/applications/debian-installer-launcher.desktop
+rm -f /etc/skel/Desktop/install-debian.desktop
+rm -f /home/user/Desktop/install-debian.desktop
+
+# Keep menu caches from retaining a deleted desktop entry when they exist.
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+fi
