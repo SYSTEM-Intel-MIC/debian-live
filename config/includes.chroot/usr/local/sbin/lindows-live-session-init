@@ -11,6 +11,11 @@ fi
 # account avoids PAM rejecting the blank-password form on LightDM.
 printf '%s\n' 'user:live' | chpasswd
 passwd --unlock user >/dev/null 2>&1 || true
+# Debian's LightDM PAM stack commonly uses this group for autologin.
+if ! getent group nopasswdlogin >/dev/null 2>&1; then
+    groupadd --system nopasswdlogin
+fi
+usermod --append --groups nopasswdlogin user
 for group in audio video plugdev netdev render input; do
     if getent group "$group" >/dev/null 2>&1; then
         usermod --append --groups "$group" user
