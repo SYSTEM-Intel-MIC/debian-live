@@ -9,6 +9,7 @@ rm -f /usr/share/applications/debian-installer.desktop
 rm -f /usr/share/applications/debian-installer-launcher.desktop
 rm -f /etc/skel/Desktop/install-debian.desktop
 rm -f /home/user/Desktop/install-debian.desktop
+rm -f /etc/xdg/autostart/calamares-desktop-icon.desktop
 
 # Keep menu caches from retaining a deleted desktop entry when they exist.
 if command -v update-desktop-database >/dev/null 2>&1; then

@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Lindows desktop launcher trust setup
-Exec=/bin/sh -c 'gio set "/home/user/Desktop/Install Lindows.desktop" metadata::trusted true >/dev/null 2>&1 || true'
+Exec=/bin/sh -c 'gio set --type=string "/home/user/Desktop/Install Lindows.desktop" metadata::trusted true >/dev/null 2>&1; touch "/home/user/Desktop/Install Lindows.desktop"'
 OnlyShowIn=ElevenDE;
 X-GNOME-Autostart-enabled=true
 NoDisplay=true

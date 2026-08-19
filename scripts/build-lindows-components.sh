@@ -72,12 +72,15 @@ apt-get install -y --no-install-recommends \
     libgdk-pixbuf-2.0-dev librsvg2-bin qt6-base-dev qt6-svg-dev \
     libgl1-mesa-dev libpng-dev libxft-dev libx11-dev libfontconfig1-dev \
     libgtk-3-dev \
-    python3 python3-gi gir1.2-gtk-3.0
+    python3 python3-gi gir1.2-gtk-3.0 \
+    udisks2 libblockdev-part2 libblockdev-fs2 dosfstools ntfs-3g mtools
 
 log "cloning cloud ElevenDE source at fixed GPL-audited revision"
 ELEV_SRC="$WORK/ElevenDE"
 clone_pinned "$ELEV_URL" "$ELEV_REV" "$ELEV_SRC"
 [ -f "$ELEV_SRC/build-deb.sh" ] || die "cloud ElevenDE source package is incomplete"
+log "patching only the Lindows build copy: execute desktop .desktop launchers"
+python3 "$ROOT/scripts/patch-elevende-desktop-launcher.py" "$ELEV_SRC/shell/main.c"
 
 log "building cloud ElevenDE 3.5.1 from $ELEV_REV"
 (

@@ -70,6 +70,12 @@ vlc
 eog
 calamares
 calamares-settings-debian
+udisks2
+libblockdev-part2
+libblockdev-fs2
+dosfstools
+ntfs-3g
+mtools
 parted
 grub-common
 grub-pc-bin
