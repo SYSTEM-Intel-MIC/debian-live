@@ -109,7 +109,15 @@ jobs:
           deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
           deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
           EOF
-          sudo chmod 755 config/hooks/normal/*.hook.chroot \
+          # live-build 3.x executes local chroot hooks from config/hooks/*.chroot.
+          # The repository keeps numbered sources under config/hooks/normal, so
+          # stage them into the actual execution directory before lb build.
+          sudo mkdir -p config/hooks
+          for hook in config/hooks/normal/*.hook.chroot; do
+            target="config/hooks/$(basename "$hook" .hook.chroot).chroot"
+            sudo cp -f "$hook" "$target"
+          done
+          sudo chmod 755 config/hooks/*.chroot \
             config/includes.chroot/usr/local/bin/lindows-installer \
             config/includes.chroot/usr/local/sbin/lindows-live-session-init \
             config/includes.chroot/usr/local/sbin/lindows-lightdm
