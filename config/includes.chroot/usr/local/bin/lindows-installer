@@ -6,7 +6,7 @@ if ! command -v calamares >/dev/null 2>&1; then
     exit 1
 fi
 
-# Calamares needs administrative access to partition and install. The Live
-# image grants only this one binary passwordless root execution to `user`,
-# avoiding a second PolicyKit identity prompt in the Live session.
-exec sudo -n /usr/bin/calamares "$@"
+# Calamares needs administrative access to partition and install. A narrowly
+# scoped Polkit rule grants only the Live `user` permission to run this one
+# installer binary, so the graphical entry does not silently exit on auth.
+exec /usr/bin/pkexec /usr/bin/calamares "$@"
