@@ -2,7 +2,6 @@
 live-boot
 live-config
 live-config-systemd
-live-debconfig
 systemd-sysv
 libpam-systemd
 linux-image-amd64
