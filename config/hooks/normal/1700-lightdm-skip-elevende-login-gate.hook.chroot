@@ -8,4 +8,7 @@ set -eu
 SESSION=/usr/local/bin/elevende-session
 if [ -f "$SESSION" ]; then
     sed -i '/^# Login gate: show a Win11-style login screen/,/^fi$/d' "$SESSION"
+    # Start a small PolicyKit agent in the graphical session so the
+    # lindows-installer pkexec wrapper can show its authorization dialog.
+    sed -i '/^echo "elevende-session: starting compositor/i\\if command -v lxqt-policykit-agent >\/dev\/null 2>\&1; then\n    lxqt-policykit-agent >\/tmp\/lindows-policykit.log 2>\&1 \&\nfi\n' "$SESSION"
 fi

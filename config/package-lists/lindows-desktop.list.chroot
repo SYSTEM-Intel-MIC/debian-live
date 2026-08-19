@@ -20,6 +20,7 @@ lightdm-gtk-greeter
 xterm
 dbus-x11
 policykit-1
+lxqt-policykit
 sudo
 network-manager
 
