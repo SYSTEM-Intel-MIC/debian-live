@@ -70,6 +70,7 @@ jobs:
             --ignore-system-defaults \
             --mode debian \
             --initramfs live-boot \
+            --initsystem systemd \
             --distribution bookworm \
             --architectures amd64 \
             --linux-packages linux-image \
