@@ -15,6 +15,16 @@ else
     exit 1
 fi
 
+# Calamares requires an explicit slideshow key in branding.desc. Reuse the
+# tested Debian QML slideshow while keeping the visible branding fully Lindows.
+BRANDING=/etc/calamares/branding/lindows
+if [ -f "$BRANDING/branding.desc" ]; then
+    install -Dm644 /usr/share/calamares/branding/default/show.qml "$BRANDING/show.qml"
+    if ! grep -q '^slideshow:' "$BRANDING/branding.desc"; then
+        printf '\nslideshow: "show.qml"\nslideshowAPI: 2\n' >> "$BRANDING/branding.desc"
+    fi
+fi
+
 # The default ElevenDE fallback makes the brand wallpaper available even if a
 # Live-user skeleton is not copied by a particular live-config profile.
 install -Dm644 /usr/share/lindows/branding/lindows-aurora-wallpaper.png \
