@@ -7,7 +7,10 @@ set -eu
 if ! id user >/dev/null 2>&1; then
     useradd --create-home --shell /bin/bash --user-group user
 fi
-passwd --delete user >/dev/null 2>&1 || true
+# Use an explicit, documented Live-session password. Unlocking the
+# account avoids PAM rejecting the blank-password form on LightDM.
+printf '%s\n' 'user:live' | chpasswd
+passwd --unlock user >/dev/null 2>&1 || true
 for group in audio video plugdev netdev render input; do
     if getent group "$group" >/dev/null 2>&1; then
         usermod --append --groups "$group" user
