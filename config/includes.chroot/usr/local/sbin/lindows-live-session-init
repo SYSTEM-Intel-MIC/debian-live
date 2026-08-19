@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+
+# The live-config user-setup profile is not guaranteed to run before LightDM
+# when the image is assembled with a custom systemd/live-config combination.
+# Create the account at boot, immediately before the display manager starts.
+if ! id user >/dev/null 2>&1; then
+    useradd --create-home --shell /bin/bash --user-group user
+fi
+passwd --delete user >/dev/null 2>&1 || true
+for group in audio video plugdev netdev render input; do
+    if getent group "$group" >/dev/null 2>&1; then
+        usermod --append --groups "$group" user
+    fi
+done
+if [ -d /etc/skel ]; then
+    cp -a /etc/skel/. /home/user/ 2>/dev/null || true
+fi
+chown -R user:user /home/user

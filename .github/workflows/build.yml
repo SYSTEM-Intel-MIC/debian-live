@@ -110,7 +110,8 @@ jobs:
           deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
           EOF
           sudo chmod 755 config/hooks/normal/*.hook.chroot \
-            config/includes.chroot/usr/local/bin/lindows-installer
+            config/includes.chroot/usr/local/bin/lindows-installer \
+            config/includes.chroot/usr/local/sbin/lindows-live-session-init
           # Keep isolinux.bin and every COM32 runtime module from the same
           # syslinux package. In particular, isolinux.cfg -> vesamenu.c32
           # requires ldlinux.c32, libcom32.c32 and libutil.c32 at boot time.

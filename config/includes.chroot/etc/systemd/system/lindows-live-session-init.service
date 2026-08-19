@@ -1,0 +1,13 @@
+[Unit]
+Description=Initialize the Lindows Live graphical session user
+Before=lightdm.service display-manager.service
+After=local-fs.target systemd-tmpfiles-setup.service
+Wants=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/lindows-live-session-init
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
