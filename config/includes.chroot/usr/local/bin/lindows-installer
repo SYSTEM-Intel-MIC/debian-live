@@ -9,4 +9,10 @@ fi
 # In the disposable LiveCD, the dedicated sudoers rule grants only this
 # installer binary passwordless root execution. This avoids asking the Live
 # user for a password that does not exist while keeping other commands unprivileged.
+# Preserve a usable X11 session even when the wrapper is started from a desktop
+# file through a privilege boundary.
+export DISPLAY="${DISPLAY:-:0}"
+if [ -z "${XAUTHORITY:-}" ] && [ -f "/home/user/.Xauthority" ]; then
+    export XAUTHORITY=/home/user/.Xauthority
+fi
 exec /usr/bin/sudo -n /usr/bin/calamares "$@"

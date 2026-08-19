@@ -1,2 +1,3 @@
 # Lindows Live installer: only the graphical installer may be elevated.
+Defaults:user env_keep += "DISPLAY XAUTHORITY XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS"
 user ALL=(root) NOPASSWD: /usr/bin/calamares
