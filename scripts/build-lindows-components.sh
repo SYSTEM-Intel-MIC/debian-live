@@ -81,6 +81,7 @@ log "patching only the Lindows build copy: execute desktop .desktop launchers"
 python3 "$ROOT/scripts/patch-elevende-desktop-launcher.py" "$ELEV_SRC/shell/main.c"
 python3 "$ROOT/scripts/patch-elevende-shell-display.py" "$ELEV_SRC/shell/main.c"
 python3 "$ROOT/scripts/patch-elevende-settings-display.py" "$ELEV_SRC/apps/settings/main.cpp"
+python3 "$ROOT/scripts/patch-elevende-lock-auth.py" "$ELEV_SRC/shell/lock.c"
 # The shell patch uses the RandR API directly; make the pinned upstream shell
 # link against libXrandr in the isolated component build.
 sed -i 's/x11 xft fontconfig freetype2 libpng/x11 xft fontconfig freetype2 libpng xrandr/g' "$ELEV_SRC/shell/Makefile"
