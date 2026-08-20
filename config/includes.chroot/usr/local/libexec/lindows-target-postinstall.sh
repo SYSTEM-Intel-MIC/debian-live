@@ -5,8 +5,31 @@ set -eu
 # shellprocess. It must be safe to run more than once.
 TARGET=/
 
+# The Live image deliberately autologins a temporary `user` account. Never
+# carry that policy into the installed target: it resets the user's password,
+# suppresses LightDM's greeter, and breaks logout/login recovery.
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl disable lindows-live-session-init.service >/dev/null 2>&1 || true
+fi
+rm -f /etc/systemd/system/lindows-live-session-init.service \
+      /etc/systemd/system/multi-user.target.wants/lindows-live-session-init.service \
+      /etc/systemd/system/lightdm.service.d/10-lindows-live-user.conf \
+      /usr/local/sbin/lindows-lightdm \
+      /usr/local/sbin/lindows-live-session-init \
+      /etc/lightdm/lightdm.conf.d/99-lindows-autologin.conf \
+      /etc/lightdm/lightdm.conf.d/50-lindows.conf
+rm -f /etc/xdg/autostart/lindows-desktop-trust.desktop
+install -Dm644 /dev/stdin /etc/lightdm/lightdm.conf.d/60-lindows-installed.conf <<'EOF'
+[Seat:*]
+greeter-session=lightdm-gtk-greeter
+user-session=elevende
+autologin-user=
+autologin-user-timeout=0
+greeter-hide-users=false
+EOF
+
 # Installed systems must not keep the Live-only installer entry.
-find /home /root -type f \( -iname '*install*lindows*.desktop' -o -iname 'install-debian.desktop' -o -iname 'debian-installer.desktop' -o -iname 'debian-installer-launcher.desktop' \) -delete 2>/dev/null || true
+find /home /root /etc/skel -type f \( -iname '*install*lindows*.desktop' -o -iname 'install-debian.desktop' -o -iname 'debian-installer.desktop' -o -iname 'debian-installer-launcher.desktop' \) -delete 2>/dev/null || true
 rm -f /usr/share/applications/lindows-installer.desktop \
       /usr/share/applications/debian-installer.desktop \
       /usr/share/applications/debian-installer-launcher.desktop \
@@ -20,17 +43,17 @@ for entry in /usr/share/applications/*.desktop; do
     fi
 done
 
-# Keep the Lindows GRUB theme self-contained in the installed target.
-if [ -f /usr/share/lindows/branding/lindows-aurora-wallpaper.png ]; then
-    install -Dm644 /usr/share/lindows/branding/lindows-aurora-wallpaper.png \
-        /boot/grub/themes/lindows/lindows-aurora-wallpaper.png
-fi
-if [ -f /usr/share/lindows/branding/theme.txt ]; then
-    install -Dm644 /usr/share/lindows/branding/theme.txt \
-        /boot/grub/themes/lindows/theme.txt
-fi
-mkdir -p /etc/default/grub.d
-cat > /etc/default/grub.d/00-lindows.cfg <<'EOF'
+# Keep the Lindows GRUB theme self-contained in the installed target. Copy
+# both the theme and its relative desktop-image asset before running grub-mkconfig.
+THEME_SRC=/usr/share/lindows/branding/theme.txt
+[ -f "$THEME_SRC" ] || THEME_SRC=/boot/grub/themes/lindows/theme.txt
+WALL_SRC=/usr/share/lindows/branding/lindows-aurora-wallpaper.png
+[ -f "$WALL_SRC" ] || WALL_SRC=/boot/grub/themes/lindows/lindows-aurora-wallpaper.png
+if [ -f "$THEME_SRC" ] && [ -f "$WALL_SRC" ]; then
+    install -Dm644 "$THEME_SRC" /boot/grub/themes/lindows/theme.txt
+    install -Dm644 "$WALL_SRC" /boot/grub/themes/lindows/lindows-aurora-wallpaper.png
+    mkdir -p /etc/default/grub.d
+    cat > /etc/default/grub.d/00-lindows.cfg <<'EOF'
 GRUB_DISTRIBUTOR="Lindows"
 GRUB_THEME="/boot/grub/themes/lindows/theme.txt"
 GRUB_TIMEOUT_STYLE=menu
@@ -38,6 +61,10 @@ GRUB_TIMEOUT=6
 GRUB_DEFAULT=0
 GRUB_DISABLE_OS_PROBER=false
 EOF
+else
+    # Never leave a dangling GRUB_THEME which produces a boot-time error.
+    rm -f /etc/default/grub.d/00-lindows.cfg
+fi
 
 # Enable a real lock screen for the installed graphical session.
 if command -v light-locker >/dev/null 2>&1; then
@@ -64,6 +91,8 @@ mode=$(sed -n '1p' "$HOME/.config/lindows/display.conf")
 output=$(xrandr 2>/dev/null | awk '/ connected/{print $1; exit}')
 [ -n "$output" ] || exit 0
 xrandr --output "$output" --mode "$mode" >/dev/null 2>&1 || true
+sleep 2
+pkill -USR1 -x elevende-shell >/dev/null 2>&1 || true
 EOF
 install -Dm644 /dev/stdin /etc/xdg/autostart/lindows-restore-display.desktop <<'EOF'
 [Desktop Entry]
@@ -74,6 +103,14 @@ OnlyShowIn=ElevenDE;LXDE;Openbox;
 NoDisplay=true
 X-GNOME-Autostart-enabled=true
 EOF
+
+# Preserve the password entered in Calamares and make the created human user
+# eligible for sudo without changing or resetting its password.
+if getent group sudo >/dev/null 2>&1; then
+    for account in $(awk -F: '$3 >= 1000 && $3 < 60000 && $1 != "nobody" {print $1}' /etc/passwd); do
+        usermod -aG sudo "$account" >/dev/null 2>&1 || true
+    done
+fi
 
 # Refresh device state and initramfs so firmware already present in the target
 # is discovered without requiring a second manual driver step.

@@ -1,6 +1,10 @@
 #!/bin/sh
 set -eu
 
+# This helper is LiveCD-only. On an installed system it must never create or
+# modify an account, especially its password.
+[ -d /run/live ] || exit 0
+
 # The live-config user-setup profile is not guaranteed to run before LightDM
 # when the image is assembled with a custom systemd/live-config combination.
 # Create the account at boot, immediately before the display manager starts.
