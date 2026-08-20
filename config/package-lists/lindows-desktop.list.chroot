@@ -70,6 +70,7 @@ vlc
 eog
 calamares
 calamares-settings-debian
+squashfs-tools
 udisks2
 libblockdev-part2
 libblockdev-fs2

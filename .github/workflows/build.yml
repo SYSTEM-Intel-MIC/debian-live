@@ -216,7 +216,17 @@ jobs:
           test -s "$BOOT_CHECK/ldlinux.c32"
           test -s "$BOOT_CHECK/vesamenu.c32"
           test -s "$BOOT_CHECK/efi.img"
-          rm -rf "$BOOT_CHECK"
+          # Inspect the compressed target filesystem for installer-critical files.
+          ROOT_CHECK="$(mktemp -d)"
+          xorriso -osirrox on -indev "$ISO" -extract /live/filesystem.squashfs "$ROOT_CHECK/filesystem.squashfs" >/dev/null 2>&1
+          unsquashfs -l "$ROOT_CHECK/filesystem.squashfs" > "$ROOT_CHECK/squashfs.list"
+          grep -q '/usr/bin/unsquashfs$' "$ROOT_CHECK/squashfs.list"
+          grep -q '/usr/lib/.*/calamares/modules/partition/libcalamares_viewmodule_partition.so$' "$ROOT_CHECK/squashfs.list"
+          grep -q '/usr/lib/.*/calamares/modules/mount/module.desc$' "$ROOT_CHECK/squashfs.list"
+          grep -q '/etc/calamares/branding/lindows/show.qml$' "$ROOT_CHECK/squashfs.list"
+          grep -q '/etc/calamares/branding/lindows/stylesheet.qss$' "$ROOT_CHECK/squashfs.list"
+          grep -q '/usr/local/share/elevende-shell/icons/64x64/apps/lindows-installer.svg$' "$ROOT_CHECK/squashfs.list"
+          rm -rf "$BOOT_CHECK" "$ROOT_CHECK"
           grep -q -E 'El Torito boot img.*BIOS|El Torito boot img.*UEFI|EFI|efi.img|isolinux' iso-boot-report.txt
           sha256sum "$ISO" | tee Lindows-1.0-amd64-livecd.iso.sha256
           cat > Lindows-1.0-release-notes.md <<EOF

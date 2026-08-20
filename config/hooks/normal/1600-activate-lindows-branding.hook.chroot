@@ -1,6 +1,21 @@
 #!/bin/sh
 set -eu
 
+# Fail the image build early if the installed target cannot perform a real
+# Calamares installation. unpackfs executes unsquashfs inside the target.
+command -v unsquashfs >/dev/null 2>&1 || {
+    echo "Lindows: squashfs-tools/unsquashfs is required in the target" >&2
+    exit 1
+}
+find /usr/lib -path '*/calamares/modules/partition/libcalamares_viewmodule_partition.so' -print -quit | grep -q . || {
+    echo "Lindows: Calamares partition module is missing" >&2
+    exit 1
+}
+find /usr/lib -path '*/calamares/modules/mount/module.desc' -print -quit | grep -q . || {
+    echo "Lindows: Calamares mount module is missing" >&2
+    exit 1
+}
+
 # calamares-settings-debian supplies the tested Debian module sequence. Keep
 # that sequence but replace its selected branding component with Lindows.
 SETTINGS=/etc/calamares/settings.conf
@@ -15,14 +30,15 @@ else
     exit 1
 fi
 
-# Calamares requires an explicit slideshow key in branding.desc. Reuse the
-# tested Debian QML slideshow while keeping the visible branding fully Lindows.
+# Calamares requires an explicit slideshow key. The Lindows source tree ships
+# its own show.qml; never copy Debian's placeholder slideshow over it.
 BRANDING=/etc/calamares/branding/lindows
-if [ -f "$BRANDING/branding.desc" ]; then
-    install -Dm644 /usr/share/calamares/branding/default/show.qml "$BRANDING/show.qml"
-    if ! grep -q '^slideshow:' "$BRANDING/branding.desc"; then
-        printf '\nslideshow: "show.qml"\nslideshowAPI: 2\n' >> "$BRANDING/branding.desc"
-    fi
+if [ ! -f "$BRANDING/show.qml" ]; then
+    echo "Lindows: custom Calamares show.qml is missing" >&2
+    exit 1
+fi
+if ! grep -q '^slideshow:' "$BRANDING/branding.desc"; then
+    printf '\nslideshow: "show.qml"\nslideshowAPI: 2\n' >> "$BRANDING/branding.desc"
 fi
 
 # The default ElevenDE fallback makes the brand wallpaper available even if a
