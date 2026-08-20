@@ -81,6 +81,7 @@ clone_pinned "$ELEV_URL" "$ELEV_REV" "$ELEV_SRC"
 [ -f "$ELEV_SRC/build-deb.sh" ] || die "cloud ElevenDE source package is incomplete"
 log "patching only the Lindows build copy: execute desktop .desktop launchers"
 python3 "$ROOT/scripts/patch-elevende-desktop-launcher.py" "$ELEV_SRC/shell/main.c"
+python3 "$ROOT/scripts/patch-elevende-settings-display.py" "$ELEV_SRC/apps/settings/main.cpp"
 
 log "building cloud ElevenDE 3.5.1 from $ELEV_REV"
 (
@@ -187,7 +188,9 @@ find "$STAGE/usr/lib/feedbackhub" -type d -name '__pycache__' -prune -exec rm -r
 find "$STAGE/usr/lib/feedbackhub" -type f -name '*.pyc' -delete
 install -Dm755 /dev/stdin "$STAGE/usr/bin/feedbackhub" <<'LAUNCH'
 #!/bin/sh
-exec python3 -c 'import sys; sys.path.insert(0, "/usr/lib/feedbackhub"); from feedbackhub.app import run; raise SystemExit(run())' "$@"
+set -eu
+export PYTHONPATH="/usr/lib/feedbackhub${PYTHONPATH:+:$PYTHONPATH}"
+exec /usr/bin/python3 -c 'from feedbackhub.app import run; raise SystemExit(run())' "$@"
 LAUNCH
 install -Dm644 "$FEEDBACKHUB/feedbackhub.desktop" "$STAGE/usr/share/applications/feedbackhub.desktop"
 install -Dm644 "$FEEDBACKHUB/feedbackhub/assets/icon.svg" \

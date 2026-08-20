@@ -6,7 +6,14 @@ systemd-sysv
 libpam-systemd
 linux-image-amd64
 firmware-linux
+firmware-linux-nonfree
 firmware-iwlwifi
+firmware-atheros
+firmware-brcm80211
+firmware-realtek
+firmware-mediatek
+firmware-amd-graphics
+firmware-intel-sound
 
 # X11 session, light display manager and lightweight compositor/window manager
 xorg
@@ -17,6 +24,8 @@ openbox
 picom
 lightdm
 lightdm-gtk-greeter
+light-locker
+xss-lock
 xterm
 dbus-x11
 policykit-1
@@ -39,6 +48,7 @@ libnss3
 libxss1
 libsecret-1-0
 libatspi2.0-0
+libappindicator3-1
 xdg-utils
 libqt6widgets6
 libqt6gui6
@@ -87,8 +97,9 @@ efibootmgr
 os-prober
 
 # Runtime dependencies of integrated system tools
-python3
 python3-gi
+python3-cairo
+python3-tki
 gir1.2-gtk-3.0
 python3-tk
 xdotool
@@ -98,5 +109,7 @@ libdrm2
 libsystemd0
 pciutils
 usbutils
+fwupd
+linux-headers-amd64
 procps
 man-db
