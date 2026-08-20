@@ -66,7 +66,7 @@ apt-get install -y --no-install-recommends \
     build-essential cmake ninja-build meson pkg-config \
     libgtk-3-dev libjson-glib-dev libdrm-dev libfreetype-dev \
     libfontconfig1-dev libsystemd-dev libgl1-mesa-dev libxkbcommon-dev \
-    libxrandr-dev xorg-dev libxi-dev libxtst-dev libdbus-1-dev libcrypt-dev \
+    libxrandr-dev xorg-dev libxi-dev libxtst-dev libdbus-1-dev libcrypt-dev libpam0g-dev \
     libgdk-pixbuf-2.0-dev librsvg2-bin qt6-base-dev qt6-svg-dev \
     libgl1-mesa-dev libpng-dev libxft-dev libx11-dev libfontconfig1-dev \
     libgtk-3-dev \
@@ -82,6 +82,8 @@ python3 "$ROOT/scripts/patch-elevende-desktop-launcher.py" "$ELEV_SRC/shell/main
 python3 "$ROOT/scripts/patch-elevende-shell-display.py" "$ELEV_SRC/shell/main.c"
 python3 "$ROOT/scripts/patch-elevende-settings-display.py" "$ELEV_SRC/apps/settings/main.cpp"
 python3 "$ROOT/scripts/patch-elevende-lock-auth.py" "$ELEV_SRC/shell/lock.c"
+# The lock screen now delegates authentication to Debian's PAM lightdm stack.
+sed -i 's/ -lcrypt$/ -lcrypt -lpam/' "$ELEV_SRC/shell/Makefile"
 # The shell patch uses the RandR API directly; make the pinned upstream shell
 # link against libXrandr in the isolated component build.
 sed -i 's/x11 xft fontconfig freetype2 libpng/x11 xft fontconfig freetype2 libpng xrandr/g' "$ELEV_SRC/shell/Makefile"
