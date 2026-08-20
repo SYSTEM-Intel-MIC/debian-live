@@ -6,12 +6,13 @@ set -eu
 TARGET=/
 
 # Installed systems must not keep the Live-only installer entry.
-find /home /root -type f \( -name 'Install Lindows.desktop' -o -name 'install-debian.desktop' -o -name 'debian-installer.desktop' -o -name 'debian-installer-launcher.desktop' \) -delete 2>/dev/null || true
+find /home /root -type f \( -iname '*install*lindows*.desktop' -o -iname 'install-debian.desktop' -o -iname 'debian-installer.desktop' -o -iname 'debian-installer-launcher.desktop' \) -delete 2>/dev/null || true
 rm -f /usr/share/applications/lindows-installer.desktop \
       /usr/share/applications/debian-installer.desktop \
       /usr/share/applications/debian-installer-launcher.desktop \
       /usr/share/applications/install-system.desktop \
-      /etc/xdg/autostart/calamares-desktop-icon.desktop
+      /etc/xdg/autostart/calamares-desktop-icon.desktop \
+      /etc/xdg/autostart/lindows-desktop-trust.desktop
 for entry in /usr/share/applications/*.desktop; do
     [ -f "$entry" ] || continue
     if grep -qiE '^Name(\[[^]]+\])?=.*(Install Lindows|Install System|安装 Lindows|安装系统)' "$entry" 2>/dev/null; then

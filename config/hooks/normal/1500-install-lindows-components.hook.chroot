@@ -12,6 +12,10 @@ sha256sum -c SHA256SUMS
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends ./*.deb
+# RunBox resolves commands through PATH; provide the Windows-compatible command name.
+if [ -x /usr/local/bin/linux-regedit ]; then
+    ln -sfn /usr/local/bin/linux-regedit /usr/local/bin/regedit
+fi
 
 # Packages are installed; keeping their archives only increases the ISO.
 rm -rf "$PKG_DIR"
@@ -24,6 +28,5 @@ Lindows bundled components
 - lindows-bsod (fixed source revision; never enabled as a service)
 - lindows-device-manager (fixed source revision)
 - Copilot for Linux 1.0.0 amd64 DEB (SHA-256 verified; no API key)
-- Feedback Hub for Linux 1.0.0 (fixed source revision; local data)
 - PeaZip 11.2.0 Qt6 official DEB
 EOF

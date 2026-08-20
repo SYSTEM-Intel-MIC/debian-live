@@ -8,7 +8,6 @@
 |---|---|---|---|
 | LinuxPCManager | https://github.com/SYSTEM-Intel-MIC/LinuxPCManager | 页面显示仓库根目录没有 LICENSE 文件；README 声明代码为个人学习目的的独立开源复刻、代码全部原创，并声明不代表 Microsoft。 | 不把该组件的许可证擅自改写为 GPL；应保留上游 README 与版权/来源说明，并在 Lindows 中作为独立第三方组件分发。 |
 | Copilot for Linux | https://github.com/com-in/Copilot-For-Linux | GitHub 页面明确显示 GPL-3.0 license；README 与 Release 说明亦声明 GPL-3.0。 | 在 Lindows 中保留 GPL-3.0 版权与许可证文本，并提供对应源代码或可获取源码的固定提交链接。 |
-| Feedback Hub for Linux | https://github.com/com-in/FeedbackHub-For-Linux | 仓库现有审计资料记录为 GPL-3.0，待补充页面/文件核验。 | 保留 GPL-3.0 声明并提供对应源码获取信息。 |
 | PeaZip | https://github.com/peazip/PeaZip | 公开项目说明其 Linux 版本为 LGPLv3；当前 Lindows 使用官方二进制 DEB。 | 不将 PeaZip 归入 Lindows GPL 代码；保留 LGPLv3 和上游版权信息。 |
 
 ## 重要合规边界
@@ -19,7 +18,6 @@ Lindows 主仓库可以选择 GPL-3.0-or-later 作为本项目自行编写代码
 
 | 组件 | 当前核实结果 | 发布处理 |
 |---|---|---|
-| Feedback Hub for Linux | GitHub 页面显示根目录存在 LICENSE，README 和仓库页面均明确显示 GPL-3.0 license。 | 可按 GPL-3.0 保留并分发，需在 Lindows 第三方声明中列出固定提交 `67befa32fc742a9a33080b0c2afa8f95f40ee3d9`。 |
 | linux-regedit | 当前 GitHub 页面根目录显示源码、README 和 Meson 文件，但未显示 LICENSE 文件；README 页面未给出明确许可证声明。 | 不应把其代码重新标为 GPL；在 Lindows 中保留来源、固定提交和“许可证未明确，按上游许可状态分发”的醒目标记，最好后续取得上游书面授权。 |
 
 | bsod | GitHub 页面根目录存在 LICENSE，仓库页面明确显示 MIT license。 | Lindows 的 bsod 集成代码必须保留 MIT 版权和许可证文本；不能因 Lindows 主仓库选择 GPL 而改写为 GPL。 |

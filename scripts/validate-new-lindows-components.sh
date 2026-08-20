@@ -9,16 +9,10 @@ mkdir -p "$TMP"
 
 bash -n "$ROOT/scripts/build-lindows-components.sh"
 [ "$(git -C "$AUDIT/copilot" rev-parse HEAD)" = 842248411d1046881023e100073320c5dbd62b57 ]
-[ "$(git -C "$AUDIT/feedbackhub" rev-parse HEAD)" = 67befa32fc742a9a33080b0c2afa8f95f40ee3d9 ]
 
 grep -q 'Copilot for Linux' "$ROOT/README.md"
-grep -q 'Feedback Hub for Linux' "$ROOT/README.md"
 grep -q 'COPILOT_SHA256=' "$ROOT/scripts/build-lindows-components.sh"
-grep -q 'FEEDBACKHUB_REV=' "$ROOT/scripts/build-lindows-components.sh"
 
-grep -q '^Exec=' "$AUDIT/feedbackhub/feedbackhub.desktop"
-grep -q 'python3-gi' "$AUDIT/feedbackhub/build_deb_linux.sh"
-grep -q 'gir1.2-gtk-3.0' "$AUDIT/feedbackhub/build_deb_linux.sh"
 
 curl --fail --location --retry 2 --output "$TMP/copilot-for-linux_1.0.0_amd64.deb" \
   https://github.com/com-in/Copilot-For-Linux/releases/download/v1.0.0/copilot-for-linux_1.0.0_amd64.deb

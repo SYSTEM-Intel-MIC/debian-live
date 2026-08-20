@@ -10,7 +10,6 @@ Copyright © 2026 SYSTEM-Intel-MIC。Lindows 自有的构建脚本、配置、�
 |---|---|---|---|
 | ElevenDE 3.5.1 | [SYSTEM-Intel-MIC/ElevenDE](https://github.com/SYSTEM-Intel-MIC/ElevenDE)，固定提交 `80d833958ad84f27b2890160a31d1443fe3c5ba6` | ElevenDE 自有代码按 GPL-3.0-or-later 发布 | 构建脚本从云端固定提交克隆，不再使用本地旧压缩包；上游子项目的许可证按下方独立声明处理。 |
 | Copilot for Linux 1.0.0 | [com-in/Copilot-For-Linux](https://github.com/com-in/Copilot-For-Linux)，固定提交 `842248411d1046881023e100073320c5dbd62b57` | GPL-3.0 | 通过固定 Release DEB 集成；源码可从上游固定提交获取，Lindows 不写入 API 密钥。 |
-| Feedback Hub for Linux 1.0.0 | [com-in/FeedbackHub-For-Linux](https://github.com/com-in/FeedbackHub-For-Linux)，固定提交 `67befa32fc742a9a33080b0c2afa8f95f40ee3d9` | GPL-3.0 | 在 Debian Bookworm 容器中从固定源码构建；保留上游 GPL-3.0 声明。 |
 | LinuxPCManager | [SYSTEM-Intel-MIC/LinuxPCManager](https://github.com/SYSTEM-Intel-MIC/LinuxPCManager)，固定提交 `4a744338aff580d4c7260bb00cbebfe8521bcf80` | 当前上游页面未显示 LICENSE 文件；README 声明代码为个人学习目的的独立开源复刻 | 不将其重新标为 GPL；保留上游 README、来源和固定提交信息。若单独再发布该组件，应先取得明确许可证授权。 |
 | linux-regedit | [heyManNice/regedit](https://github.com/heyManNice/regedit)，固定提交 `0e3de3dcfbf1aca0fbc8dda2be307a1224c0f04f` | 当前上游页面未显示 LICENSE 文件；当前审计未能确认可执行的明确许可证 | 不将其重新标为 GPL；仅按当前上游授权状态分发，并保留来源。建议上游作者补充明确许可证或提供书面授权。 |
 | bsod | [heyManNice/bsod](https://github.com/heyManNice/bsod)，固定提交 `45757f64e6fa2983e92382a2ba8e47b1685d92f9` | MIT | 保留 MIT 版权和许可证文本；Lindows 入口仅以 `--restore` 演示模式调用。 |

@@ -52,6 +52,9 @@ new = '''        if (m_resCombo->count() == 0)
         QProcess::startDetached(QStringLiteral("xrandr"),
                                 { QStringLiteral("--output"), m_output,
                                   QStringLiteral("--mode"), mode });
+        QProcess::startDetached(QStringLiteral("sh"),
+                                { QStringLiteral("-c"),
+                                  QStringLiteral("sleep 1; pkill -USR1 -x elevende-shell >/dev/null 2>&1 || true") });
     }
 '''
 if old not in text:
