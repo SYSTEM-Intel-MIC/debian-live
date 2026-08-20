@@ -32,6 +32,13 @@ install -Dm644 /usr/share/lindows/branding/lindows-aurora-wallpaper.png \
 install -Dm644 /usr/share/lindows/branding/lindows-aurora-wallpaper.png \
     /etc/skel/.local/share/elevende/wallpaper.png
 
+# Use the Lindows mark as a real ElevenDE theme icon. ElevenDE resolves desktop
+# file icons from its own theme before consulting system icon themes.
+for size in 64x64 96x96 128x128 scalable; do
+    install -Dm644 "$BRANDING/lindows-mark.svg" \
+        "/usr/local/share/elevende-shell/icons/$size/apps/lindows-installer.svg"
+done
+
 # Make the Live session and Calamares use Simplified Chinese by default.
 if [ -f /etc/locale.gen ]; then
     sed -i -E 's/^#[[:space:]]*(zh_CN.UTF-8[[:space:]]+UTF-8)/\1/' /etc/locale.gen

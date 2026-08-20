@@ -51,5 +51,10 @@ new = '''    } else if (strstr(path, ".desktop") && access(path, R_OK) == 0) {
 '''
 if old not in text:
     raise SystemExit("ElevenDE open_path block was not found; source layout changed")
-path.write_text(text.replace(old, new, 1))
+text = text.replace(old, new, 1)
+old_icon = '        const char *nm = ic[i].is_dir ? "folder" : file_icon_name(ic[i].label);\n        int kind = ic[i].is_dir ? VI_FOLDER : VI_FILE;\n'
+new_icon = '        const char *nm = ic[i].is_dir ? "folder" : file_icon_name(ic[i].label);\n        int kind = ic[i].is_dir ? VI_FOLDER : VI_FILE;\n        if (strstr(ic[i].path, "/Install Lindows.desktop"))\n            nm = "lindows-installer";\n'
+if old_icon not in text:
+    raise SystemExit("ElevenDE desktop icon block was not found; source layout changed")
+path.write_text(text.replace(old_icon, new_icon, 1))
 print(f"patched {path}")
