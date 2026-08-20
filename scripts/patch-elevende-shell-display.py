@@ -9,7 +9,7 @@ path = Path(sys.argv[1])
 text = path.read_text()
 
 old_decl = "static Window mk_owindow(int x, int y, int w, int h);\n"
-new_decl = old_decl + "static void set_wm_state(Window w);\nstatic volatile sig_atomic_t lindows_screen_dirty = 0;\nstatic void lindows_screen_signal(int sig) { (void)sig; lindows_screen_dirty = 1; }\n"
+new_decl = old_decl + "static void set_wm_state(Window w);\nstatic void power_hide(void);\nstatic volatile sig_atomic_t lindows_screen_dirty = 0;\nstatic void lindows_screen_signal(int sig) { (void)sig; lindows_screen_dirty = 1; }\n"
 if old_decl not in text:
     raise SystemExit("window declaration marker not found")
 text = text.replace(old_decl, new_decl, 1)
@@ -26,7 +26,7 @@ helper = '''/* Recompute all shell-owned geometry after an XRandR mode change.  
 static void lindows_relayout_screen(void) {
     int nw = XWidthOfScreen(ScreenOfDisplay(dpy, scr));
     int nh = XHeightOfScreen(ScreenOfDisplay(dpy, scr));
-    if (nw <= 0 || nh <= 0 || nw == scr_w && nh == scr_h)
+    if (nw <= 0 || nh <= 0 || (nw == scr_w && nh == scr_h))
         return;
     scr_w = nw;
     scr_h = nh;
