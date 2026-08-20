@@ -7,6 +7,10 @@ command -v unsquashfs >/dev/null 2>&1 || {
     echo "Lindows: squashfs-tools/unsquashfs is required in the target" >&2
     exit 1
 }
+command -v rsync >/dev/null 2>&1 || {
+    echo "Lindows: rsync is required by Calamares unpackfs" >&2
+    exit 1
+}
 find /usr/lib -path '*/calamares/modules/partition/libcalamares_viewmodule_partition.so' -print -quit | grep -q . || {
     echo "Lindows: Calamares partition module is missing" >&2
     exit 1

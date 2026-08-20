@@ -71,6 +71,7 @@ eog
 calamares
 calamares-settings-debian
 squashfs-tools
+rsync
 udisks2
 libblockdev-part2
 libblockdev-fs2

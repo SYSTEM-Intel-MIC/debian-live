@@ -221,6 +221,7 @@ jobs:
           xorriso -osirrox on -indev "$ISO" -extract /live/filesystem.squashfs "$ROOT_CHECK/filesystem.squashfs" >/dev/null 2>&1
           unsquashfs -l "$ROOT_CHECK/filesystem.squashfs" > "$ROOT_CHECK/squashfs.list"
           grep -q '/usr/bin/unsquashfs$' "$ROOT_CHECK/squashfs.list"
+          grep -q '/usr/bin/rsync$' "$ROOT_CHECK/squashfs.list"
           grep -q '/usr/lib/.*/calamares/modules/partition/libcalamares_viewmodule_partition.so$' "$ROOT_CHECK/squashfs.list"
           grep -q '/usr/lib/.*/calamares/modules/mount/module.desc$' "$ROOT_CHECK/squashfs.list"
           grep -q '/etc/calamares/branding/lindows/show.qml$' "$ROOT_CHECK/squashfs.list"
