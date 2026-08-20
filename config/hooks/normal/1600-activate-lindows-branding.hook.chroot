@@ -58,12 +58,12 @@ instances:
   config: lindows-postinstall.conf
 EOF
 fi
-if ! grep -q '^[[:space:]]*-[[:space:]]*lindows-postinstall[[:space:]]*$' "$SETTINGS"; then
+if ! grep -q '^[[:space:]]*-[[:space:]]*shellprocess@lindows-postinstall[[:space:]]*$' "$SETTINGS"; then
     awk '
         !done && /^[[:space:]]*-[[:space:]]*packages[[:space:]]*$/ {
             indent=$0; sub(/[^[:space:]].*/, "", indent)
             print $0
-            print indent "- lindows-postinstall"
+            print indent "- shellprocess@lindows-postinstall"
             done=1
             next
         }
@@ -140,7 +140,12 @@ fi
 if [ -x "/opt/Copilot For Linux/copilot-for-linux" ]; then
     install -Dm755 /dev/stdin /usr/local/bin/lindows-copilot <<'LAUNCH'
 #!/bin/sh
-exec "/opt/Copilot For Linux/copilot-for-linux" "$@"
+set -eu
+APP="/opt/Copilot For Linux/copilot-for-linux"
+[ -x "$APP" ] || exit 127
+# Electron may refuse to start from a live session when its sandbox helper is
+# unavailable; this is the supported fallback for this bundled portable DEB.
+exec "$APP" --disable-gpu-sandbox --no-sandbox "$@"
 LAUNCH
     install -Dm644 /dev/stdin /usr/share/applications/copilot-for-linux.desktop <<'DESKTOP'
 [Desktop Entry]
@@ -152,6 +157,6 @@ Exec=/usr/local/bin/lindows-copilot %U
 Terminal=false
 Icon=copilot-for-linux
 StartupWMClass=Copilot For Linux
-Categories=Utility;
+Categories=Utility;Network;
 DESKTOP
 fi

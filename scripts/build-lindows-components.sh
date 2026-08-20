@@ -183,14 +183,14 @@ clone_pinned "$FEEDBACKHUB_URL" "$FEEDBACKHUB_REV" "$FEEDBACKHUB"
 STAGE="$WORK/pkg-feedbackhub"
 mkdir -p "$STAGE/usr/lib/feedbackhub" "$STAGE/usr/bin" \
     "$STAGE/usr/share/applications" "$STAGE/usr/share/icons/hicolor/scalable/apps"
-cp -a "$FEEDBACKHUB/feedbackhub/." "$STAGE/usr/lib/feedbackhub/"
+cp -a "$FEEDBACKHUB/feedbackhub" "$STAGE/usr/lib/"
 find "$STAGE/usr/lib/feedbackhub" -type d -name '__pycache__' -prune -exec rm -rf {} +
 find "$STAGE/usr/lib/feedbackhub" -type f -name '*.pyc' -delete
 install -Dm755 /dev/stdin "$STAGE/usr/bin/feedbackhub" <<'LAUNCH'
 #!/bin/sh
 set -eu
 export PYTHONPATH="/usr/lib/feedbackhub${PYTHONPATH:+:$PYTHONPATH}"
-exec /usr/bin/python3 -c 'from feedbackhub.app import run; raise SystemExit(run())' "$@"
+exec /usr/bin/python3 -m feedbackhub "$@"
 LAUNCH
 install -Dm644 "$FEEDBACKHUB/feedbackhub.desktop" "$STAGE/usr/share/applications/feedbackhub.desktop"
 install -Dm644 "$FEEDBACKHUB/feedbackhub/assets/icon.svg" \
