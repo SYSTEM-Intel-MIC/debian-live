@@ -6,12 +6,11 @@ systemd-sysv
 libpam-systemd
 linux-image-amd64
 firmware-linux
-firmware-linux-nonfree
 firmware-iwlwifi
 firmware-atheros
 firmware-brcm80211
 firmware-realtek
-firmware-mediatek
+firmware-misc-nonfree
 firmware-amd-graphics
 firmware-intel-sound
 
@@ -48,7 +47,7 @@ libnss3
 libxss1
 libsecret-1-0
 libatspi2.0-0
-libappindicator3-1
+libayatana-appindicator3-1
 xdg-utils
 libqt6widgets6
 libqt6gui6
