@@ -66,7 +66,7 @@ apt-get install -y --no-install-recommends \
     build-essential cmake ninja-build meson pkg-config \
     libgtk-3-dev libjson-glib-dev libdrm-dev libfreetype-dev \
     libfontconfig1-dev libsystemd-dev libgl1-mesa-dev libxkbcommon-dev \
-    xorg-dev libxi-dev libxtst-dev libdbus-1-dev libcrypt-dev \
+    libxrandr-dev xorg-dev libxi-dev libxtst-dev libdbus-1-dev libcrypt-dev \
     libgdk-pixbuf-2.0-dev librsvg2-bin qt6-base-dev qt6-svg-dev \
     libgl1-mesa-dev libpng-dev libxft-dev libx11-dev libfontconfig1-dev \
     libgtk-3-dev \
@@ -81,6 +81,9 @@ log "patching only the Lindows build copy: execute desktop .desktop launchers"
 python3 "$ROOT/scripts/patch-elevende-desktop-launcher.py" "$ELEV_SRC/shell/main.c"
 python3 "$ROOT/scripts/patch-elevende-shell-display.py" "$ELEV_SRC/shell/main.c"
 python3 "$ROOT/scripts/patch-elevende-settings-display.py" "$ELEV_SRC/apps/settings/main.cpp"
+# The shell patch uses the RandR API directly; make the pinned upstream shell
+# link against libXrandr in the isolated component build.
+sed -i 's/x11 xft fontconfig freetype2 libpng/x11 xft fontconfig freetype2 libpng xrandr/g' "$ELEV_SRC/shell/Makefile"
 
 log "building cloud ElevenDE 3.5.1 from $ELEV_REV"
 (

@@ -19,14 +19,20 @@ rm -f /etc/systemd/system/lindows-live-session-init.service \
       /etc/lightdm/lightdm.conf.d/99-lindows-autologin.conf \
       /etc/lightdm/lightdm.conf.d/50-lindows.conf
 rm -f /etc/xdg/autostart/lindows-desktop-trust.desktop
-install -Dm644 /dev/stdin /etc/lightdm/lightdm.conf.d/60-lindows-installed.conf <<'EOF'
+# LightDM is only the session launcher. ElevenDE's own elevende-lock login
+# page must remain visible, so autologin the Calamares-created human account
+# into ElevenDE instead of showing a second LightDM greeter.
+installed_account=$(awk -F: '$3 >= 1000 && $3 < 60000 && $1 != "nobody" {print $1; exit}' /etc/passwd)
+if [ -n "$installed_account" ]; then
+    install -Dm644 /dev/stdin /etc/lightdm/lightdm.conf.d/60-lindows-installed.conf <<EOF
 [Seat:*]
-greeter-session=lightdm-gtk-greeter
 user-session=elevende
-autologin-user=
+autologin-user=$installed_account
 autologin-user-timeout=0
+autologin-session=elevende
 greeter-hide-users=false
 EOF
+fi
 
 # Installed systems must not keep the Live-only installer entry.
 find /home /root /etc/skel -type f \( -iname '*install*lindows*.desktop' -o -iname 'install-debian.desktop' -o -iname 'debian-installer.desktop' -o -iname 'debian-installer-launcher.desktop' \) -delete 2>/dev/null || true

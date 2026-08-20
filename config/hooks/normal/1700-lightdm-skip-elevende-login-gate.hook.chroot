@@ -1,13 +1,10 @@
 #!/bin/sh
 set -eu
 
-# LightDM already authenticates (and, for the Live image, autologs) the user.
-# The ElevenDE session also supports startx, where its own login gate is useful,
-# but showing that gate inside a LightDM session causes a second password prompt
-# and makes automatic login appear to fail. Remove only that redundant block.
+# ElevenDE owns the Win11-style graphical login gate. LightDM only starts
+# the X11 session; never delete elevende-lock --login from elevende-session.
 SESSION=/usr/local/bin/elevende-session
 if [ -f "$SESSION" ]; then
-    sed -i '/^# Login gate: show a Win11-style login screen/,/^fi$/d' "$SESSION"
     # Start a small PolicyKit agent in the graphical session so the
     # lindows-installer pkexec wrapper can show its authorization dialog.
     sed -i '/^echo "elevende-session: starting compositor/i\\if command -v lxqt-policykit-agent >\/dev\/null 2>\&1; then\n    lxqt-policykit-agent >\/tmp\/lindows-policykit.log 2>\&1 \&\nfi\n' "$SESSION"

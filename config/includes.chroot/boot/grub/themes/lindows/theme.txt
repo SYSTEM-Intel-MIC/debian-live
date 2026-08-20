@@ -1,28 +1,15 @@
 # Lindows GRUB theme — SYSTEM-Intel-MIC
-# Use an original Lindows wallpaper and readable high-contrast menu styles.
-desktop-image: "lindows-aurora-wallpaper.png"
-desktop-color: "#06152f"
+desktop-image: "/boot/grub/themes/lindows/lindows-aurora-wallpaper.png"
+desktop-color: #06152f
 title-text: "Lindows"
-title-color: "#eaf6ff"
-title-font: "DejaVu Sans Bold 28"
-title-left: "8%"
-title-top: "12%"
-message-font: "DejaVu Sans 14"
-message-color: "#cfe8ff"
-message-left: "8%"
-message-top: "20%"
-terminal-font: "DejaVu Sans Mono 12"
-terminal-box: "false"
+title-color: #eaf6ff
 boot_menu {
   left = 8%
   top = 34%
   width = 45%
   height = 42%
-  item_font = "DejaVu Sans 16"
-  item_color = "#dceeff"
-  selected_item_font = "DejaVu Sans Bold 16"
-  selected_item_color = "#ffffff"
+  item_color = #dceeff
+  selected_item_color = #ffffff
   item_height = 36
   item_padding = 12
-  item_spacing = 6
 }

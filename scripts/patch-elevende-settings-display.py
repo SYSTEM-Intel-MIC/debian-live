@@ -49,12 +49,14 @@ new = '''        if (m_resCombo->count() == 0)
             saved.write("\\n");
             saved.close();
         }
-        QProcess::startDetached(QStringLiteral("xrandr"),
-                                { QStringLiteral("--output"), m_output,
-                                  QStringLiteral("--mode"), mode });
-        QProcess::startDetached(QStringLiteral("sh"),
-                                { QStringLiteral("-c"),
-                                  QStringLiteral("sleep 1; pkill -USR1 -x elevende-shell >/dev/null 2>&1 || true") });
+        const QStringList args = { QStringLiteral("--output"), m_output,
+                                   QStringLiteral("--mode"), mode };
+        /* Wait until RandR has committed the mode before asking ElevenDE to
+         * query the new geometry; the old detached commands raced each other. */
+        QProcess::execute(QStringLiteral("xrandr"), args);
+        QProcess::startDetached(QStringLiteral("pkill"),
+                                { QStringLiteral("-USR1"), QStringLiteral("-x"),
+                                  QStringLiteral("elevende-shell") });
     }
 '''
 if old not in text:
