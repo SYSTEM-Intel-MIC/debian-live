@@ -21,7 +21,7 @@ Lindows 是面向 AMD64 的 Debian Bookworm 轻量级 X11 Live 发行版。它�
 
 | 组件 | 源码 | 固定提交 | 集成方式 | 许可状态 |
 |---|---|---|---|---|
-| ElevenDE | [SYSTEM-Intel-MIC/ElevenDE](https://github.com/SYSTEM-Intel-MIC/ElevenDE) | `80d833958ad84f27b2890160a31d1443fe3c5ba6` | 在 Bookworm 构建容器中从云端固定提交执行 `build-deb.sh` | ElevenDE 自有代码 GPL-3.0-or-later；SAS/Explorer/runbox-linux 按各自上游声明。 |
+| ElevenDE | [SYSTEM-Intel-MIC/ElevenDE](https://github.com/SYSTEM-Intel-MIC/ElevenDE) | `80d833958ad84f27b2890160a31d1443fe3c5ba6`；许可证变更提交 `a3b9c9ed17065cc2452678fd0cfe03deda33ab11` | 在 Bookworm 构建容器中从云端固定提交执行 `build-deb.sh` | ElevenDE 自有代码 GPL-3.0-or-later；原文副本见 [`LICENSES/GPL-3.0-ElevenDE.txt`](../LICENSES/GPL-3.0-ElevenDE.txt)；SAS/Explorer/runbox-linux 按各自上游声明。 |
 | LinuxPCManager | SYSTEM-Intel-MIC/LinuxPCManager | `4a744338aff580d4c7260bb00cbebfe8521bcf80` | 仅复制已审查的 Python/Tk 源码与桌面入口，制作本地 DEB。 | 当前云端页面未显示 LICENSE 文件；不将其重新标为 GPL，随镜像提供来源与原始说明。 |
 | linux-regedit | heyManNice/regedit | `0e3de3dcfbf1aca0fbc8dda2be307a1224c0f04f` | Meson/Ninja 构建，制作本地 DEB。 | 当前云端页面未显示 LICENSE，许可状态未明确；不将其重新标为 GPL。 |
 | lindows-bsod | heyManNice/bsod | `45757f64e6fa2983e92382a2ba8e47b1685d92f9` | Meson/Ninja 构建，安装为按需运行的 root 工具。 | MIT。 |
@@ -45,7 +45,7 @@ Lindows 不安装 GNOME、KDE、task-desktop 或完整办公套件。Calamares �
 
 | 资源 | 已核验信息 | 来源 |
 |---|---|---|
-| ElevenDE | 云端提交 `80d833958ad84f27b2890160a31d1443fe3c5ba6` 已将 ElevenDE 自有代码声明为 GPL-3.0-or-later，并记录 SAS、Explorer、runbox-linux 上游边界。 | <https://github.com/SYSTEM-Intel-MIC/ElevenDE> |
+| ElevenDE | 云端提交 `a3b9c9ed17065cc2452678fd0cfe03deda33ab11` 将 ElevenDE 自有代码切换为 GPL-3.0-or-later，后续固定提交为 `80d833958ad84f27b2890160a31d1443fe3c5ba6`；Lindows 的许可证副本与上游 LICENSE 校验一致，并记录 SAS、Explorer、runbox-linux 上游边界。 | <https://github.com/SYSTEM-Intel-MIC/ElevenDE> |
 | SAS-for-Linux | 当前 `main` 提交 `6f06ef4c2817729d6c1359a800458f683b4878f4` 已包含 MIT LICENSE，版权为 Copyright (c) 2026 macOS-Terminal。 | <https://github.com/macOS-Terminal/SAS-for-Linux> |
 | Explorer-for-Linux | 当前 `main` 提交 `18676e1ce74b4dfa0c4eb897bc6c7cfe681f9db6` 已包含 MIT LICENSE；ElevenDE 固定副本 `80d833958ad84f27b2890160a31d1443fe3c5ba6` 对核心代码进行了重大修改和基本重构。 | <https://github.com/macOS-Terminal/Explorer-for-Linux> |
 | runbox-linux | 当前 `main` 提交 `a8a4786`，README 明确标注 MIT。 | <https://github.com/SYSTEM-Intel-MIC/runbox-linux> |

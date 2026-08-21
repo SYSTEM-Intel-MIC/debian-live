@@ -7,7 +7,7 @@ ElevenDE 集成的 `Explorer-for-Linux` 不能被当作未经修改的上游副�
 | 层次 | 来源 | 许可证处理 |
 |---|---|---|
 | 上游 Explorer 原始代码 | [macOS-Terminal/Explorer-for-Linux](https://github.com/macOS-Terminal/Explorer-for-Linux)，许可证提交 `18676e1ce74b4dfa0c4eb897bc6c7cfe681f9db6` | MIT；保留 `Copyright (c) 2026 macOS-Terminal`、MIT 条款和来源链接。 |
-| ElevenDE Explorer 修改/重构 | [SYSTEM-Intel-MIC/ElevenDE](https://github.com/SYSTEM-Intel-MIC/ElevenDE)，固定提交 `80d833958ad84f27b2890160a31d1443fe3c5ba6` | 按 ElevenDE 的 GPL-3.0-or-later 声明处理，但不消灭上游原始代码的 MIT 条件。 |
+| ElevenDE Explorer 修改/重构 | [SYSTEM-Intel-MIC/ElevenDE](https://github.com/SYSTEM-Intel-MIC/ElevenDE)，固定提交 `80d833958ad84f27b2890160a31d1443fe3c5ba6`；许可证变更提交 `a3b9c9ed17065cc2452678fd0cfe03deda33ab11` | 按 ElevenDE 的 GPL-3.0-or-later 声明处理；对应原文副本见 [`LICENSES/GPL-3.0-ElevenDE.txt`](../LICENSES/GPL-3.0-ElevenDE.txt)，但不消灭上游原始代码的 MIT 条件。 |
 | Lindows 构建补丁 | 本仓库 `scripts/`、配置和打包集成 | 按 Lindows GPL-3.0-or-later 许可，且不改变上游或 ElevenDE 的既有边界。 |
 
 因此，Lindows 文档不会把这个重构后的 Explorer 整体简单标记为“纯 MIT”或“纯 GPL”。分发时应同时提供本仓库的第三方声明、MIT 文本副本、ElevenDE GPL 文本及对应固定源码获取地址。
@@ -16,4 +16,5 @@ ElevenDE 集成的 `Explorer-for-Linux` 不能被当作未经修改的上游副�
 
 1. [Explorer-for-Linux 上游 LICENSE](https://github.com/macOS-Terminal/Explorer-for-Linux/blob/main/LICENSE)
 2. [Explorer-for-Linux 上游许可证提交](https://github.com/macOS-Terminal/Explorer-for-Linux/commit/18676e1ce74b4dfa0c4eb897bc6c7cfe681f9db6)
-3. [ElevenDE 固定集成提交](https://github.com/SYSTEM-Intel-MIC/ElevenDE/commit/80d833958ad84f27b2890160a31d1443fe3c5ba6)
+3. [ElevenDE GPL 许可证变更提交](https://github.com/SYSTEM-Intel-MIC/ElevenDE/commit/a3b9c9ed17065cc2452678fd0cfe03deda33ab11)
+4. [ElevenDE 固定集成提交](https://github.com/SYSTEM-Intel-MIC/ElevenDE/commit/80d833958ad84f27b2890160a31d1443fe3c5ba6)

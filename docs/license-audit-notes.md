@@ -25,7 +25,7 @@ Lindows 主仓库可以选择 GPL-3.0-or-later 作为本项目自行编写代码
 | Device Manager But Linux | GitHub 页面根目录存在 LICENSE，README 与页面均明确显示 MIT license。 | 保留 MIT 许可证与版权声明，作为独立第三方组件分发。 |
 | PeaZip | GitHub `sources` 分支根目录存在 LICENSE，页面明确显示 LGPL-3.0 license；Lindows 构建下载官方 11.2.0 Qt6 AMD64 DEB。 | 保留 LGPL-3.0，提供官方源码/上游项目链接和原始二进制校验值；不得将 PeaZip 代码或包声明为 GPL。 |
 
-| ElevenDE 3.5.1 | 历史本地包内为 MIT；云端随后在提交 `a3b9c9ed17065cc2452678fd0cfe03deda33ab11` 将 ElevenDE 自有代码切换为 GPL-3.0-or-later，最新许可边界记录提交为 `80d833958ad84f27b2890160a31d1443fe3c5ba6`。 | 以云端最新 LICENSE 为准，ElevenDE 自有代码按 GPL-3.0-or-later；SAS、Explorer、runbox-linux 按各自上游声明独立处理。 |
+| ElevenDE 3.5.1 | 历史本地包内为 MIT；云端在提交 `a3b9c9ed17065cc2452678fd0cfe03deda33ab11` 将 ElevenDE 自有代码切换为 GPL-3.0-or-later，最新许可边界记录提交为 `80d833958ad84f27b2890160a31d1443fe3c5ba6`。当前上游 LICENSE 为标准 GPL-3.0 文本。 | 以云端最新 LICENSE 为准，ElevenDE 自有代码按 GPL-3.0-or-later；Lindows 保存原文副本 [`LICENSES/GPL-3.0-ElevenDE.txt`](../LICENSES/GPL-3.0-ElevenDE.txt)，SAS、Explorer、runbox-linux 按各自上游声明独立处理。 |
 
 | runbox-linux | [SYSTEM-Intel-MIC/runbox-linux](https://github.com/SYSTEM-Intel-MIC/runbox-linux)，提交 `a8a4786` | README 明确标注 MIT。 | 保留 MIT 条款，不因 ElevenDE GPL 根目录而重新授权。 |
 

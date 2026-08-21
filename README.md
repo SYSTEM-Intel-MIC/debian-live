@@ -30,7 +30,7 @@ Lindows 使用固定提交构建第三方组件，避免构建时隐式获取默
 | PeaZip | [PeaZip](https://github.com/peazip/PeaZip) | 已固定版本并在构建中校验 SHA-256 的归档管理器。 |
 | Copilot for Linux | [com-in/Copilot-For-Linux](https://github.com/com-in/Copilot-For-Linux) | GPL-3.0；固定 v1.0.0 amd64 DEB 并校验 SHA-256；不会预置 API 密钥。 |
 
-Lindows 自有构建脚本、配置、打包元数据、品牌资源、文档和原创集成代码按 **GNU GPL-3.0-or-later** 发布，许可证全文见 [`LICENSE`](LICENSE)。本仓库是聚合发行项目，第三方组件不会因根目录许可证而被重新授权；完整的版权、固定提交、源码获取和独立许可证说明见 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)。其中，ElevenDE 云端仓库的自有代码已在提交 `a3b9c9ed17065cc2452678fd0cfe03deda33ab11` 正式切换为 GPL-3.0-or-later，并在 `80d833958ad84f27b2890160a31d1443fe3c5ba6` 记录 runbox-linux；SAS-for-Linux 与 Explorer-for-Linux 上游已在 2026-08-19 添加 MIT License；SAS 的版权声明为 Copyright (c) 2026 macOS-Terminal，Explorer 同理。ElevenDE 内嵌的 Explorer 不是未经修改的上游副本：其目录与上游同名，但 ElevenDE 已对核心源文件、构建元数据和集成方式进行了重大修改，属于独立维护的衍生/重构代码。原始 Explorer 部分保留 MIT 条款，ElevenDE 对其修改和集成部分按 GPL-3.0-or-later 发布；Lindows 自有补丁仍按本项目 GPL-3.0-or-later 处理。 |
+Lindows 自有构建脚本、配置、打包元数据、品牌资源、文档和原创集成代码按 **GNU GPL-3.0-or-later** 发布，许可证全文见 [`LICENSE`](LICENSE)。本仓库是聚合发行项目，第三方组件不会因根目录许可证而被重新授权；完整的版权、固定提交、源码获取和独立许可证说明见 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)。其中，ElevenDE 云端仓库的自有代码已在提交 `a3b9c9ed17065cc2452678fd0cfe03deda33ab11` 正式切换为 GPL-3.0-or-later；Lindows 随附的上游许可证原文副本见 [`LICENSES/GPL-3.0-ElevenDE.txt`](LICENSES/GPL-3.0-ElevenDE.txt)，其内容与 ElevenDE 当前 `main` 的 LICENSE 校验一致，并在 `80d833958ad84f27b2890160a31d1443fe3c5ba6` 记录 runbox-linux；SAS-for-Linux 与 Explorer-for-Linux 上游已在 2026-08-19 添加 MIT License；SAS 的版权声明为 Copyright (c) 2026 macOS-Terminal，Explorer 同理。ElevenDE 内嵌的 Explorer 不是未经修改的上游副本：其目录与上游同名，但 ElevenDE 已对核心源文件、构建元数据和集成方式进行了重大修改，属于独立维护的衍生/重构代码。原始 Explorer 部分保留 MIT 条款，ElevenDE 对其修改和集成部分按 GPL-3.0-or-later 发布；Lindows 自有补丁仍按本项目 GPL-3.0-or-later 处理。 |
 
 ## 获取构建产物
 
