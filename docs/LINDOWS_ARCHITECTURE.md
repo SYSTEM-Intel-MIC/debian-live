@@ -27,8 +27,8 @@ Lindows 是面向 AMD64 的 Debian Bookworm 轻量级 X11 Live 发行版。它�
 | lindows-bsod | heyManNice/bsod | `45757f64e6fa2983e92382a2ba8e47b1685d92f9` | Meson/Ninja 构建，安装为按需运行的 root 工具。 | MIT。 |
 | devmgr | daimile2/Device-Manager-But-Linux | `e7e8238cc72a08ce0302e4ffbd529838f49fbed4` | Go 1.24 Bookworm 容器构建 GUI 与 CLI，制作本地 DEB。 | MIT。 |
 | PeaZip | peazip/PeaZip 11.2.0 | 固定官方发布 | 下载 `peazip_11.2.0.LINUX.Qt6-1_amd64.deb`，核对 SHA-256 后安装。 | LGPLv3，随上游 DEB 提供。 |
-| SAS-for-Linux | [macOS-Terminal/SAS-for-Linux](https://github.com/macOS-Terminal/SAS-for-Linux) | `7b933fa` | 随云端 ElevenDE 源码构建。 | 当前上游页面未显示 LICENSE，状态未明确；不由 ElevenDE 根 GPL 自动覆盖。 |
-| Explorer-for-Linux | [macOS-Terminal/Explorer-for-Linux](https://github.com/macOS-Terminal/Explorer-for-Linux) | `4a9e19f` | 随云端 ElevenDE 源码构建。 | 当前上游页面未显示 LICENSE，状态未明确；不由 ElevenDE 根 GPL 自动覆盖。 |
+| SAS-for-Linux | [macOS-Terminal/SAS-for-Linux](https://github.com/macOS-Terminal/SAS-for-Linux) | `6f06ef4c2817729d6c1359a800458f683b4878f4` | 随云端 ElevenDE 源码构建。 | MIT；Copyright (c) 2026 macOS-Terminal；保留上游 MIT 条款。 |
+| Explorer-for-Linux | [macOS-Terminal/Explorer-for-Linux](https://github.com/macOS-Terminal/Explorer-for-Linux) | 上游许可证提交 `18676e1ce74b4dfa0c4eb897bc6c7cfe681f9db6`；ElevenDE 集成提交 `80d833958ad84f27b2890160a31d1443fe3c5ba6` | 随云端 ElevenDE 源码构建；ElevenDE 对 Explorer 核心源文件、构建元数据和集成方式进行了重大修改与基本重构。 | 上游原始部分 MIT；ElevenDE 修改/重构部分按 GPL-3.0-or-later 声明，不能把整个重构副本简单标成单一许可证。 |
 | runbox-linux | [SYSTEM-Intel-MIC/runbox-linux](https://github.com/SYSTEM-Intel-MIC/runbox-linux) | `a8a4786` | 随云端 ElevenDE 源码构建。 | README 明确 MIT；保留独立 MIT 条款。 |
 
 ## 构建边界与安全原则
@@ -46,8 +46,8 @@ Lindows 不安装 GNOME、KDE、task-desktop 或完整办公套件。Calamares �
 | 资源 | 已核验信息 | 来源 |
 |---|---|---|
 | ElevenDE | 云端提交 `80d833958ad84f27b2890160a31d1443fe3c5ba6` 已将 ElevenDE 自有代码声明为 GPL-3.0-or-later，并记录 SAS、Explorer、runbox-linux 上游边界。 | <https://github.com/SYSTEM-Intel-MIC/ElevenDE> |
-| SAS-for-Linux | 当前 `main` 提交 `7b933fa`，页面未显示 LICENSE；许可状态未明确。 | <https://github.com/macOS-Terminal/SAS-for-Linux> |
-| Explorer-for-Linux | 当前 `main` 提交 `4a9e19f`，页面未显示 LICENSE；许可状态未明确。 | <https://github.com/macOS-Terminal/Explorer-for-Linux> |
+| SAS-for-Linux | 当前 `main` 提交 `6f06ef4c2817729d6c1359a800458f683b4878f4` 已包含 MIT LICENSE，版权为 Copyright (c) 2026 macOS-Terminal。 | <https://github.com/macOS-Terminal/SAS-for-Linux> |
+| Explorer-for-Linux | 当前 `main` 提交 `18676e1ce74b4dfa0c4eb897bc6c7cfe681f9db6` 已包含 MIT LICENSE；ElevenDE 固定副本 `80d833958ad84f27b2890160a31d1443fe3c5ba6` 对核心代码进行了重大修改和基本重构。 | <https://github.com/macOS-Terminal/Explorer-for-Linux> |
 | runbox-linux | 当前 `main` 提交 `a8a4786`，README 明确标注 MIT。 | <https://github.com/SYSTEM-Intel-MIC/runbox-linux> |
 | LinuxPCManager | README 声明 Debian/Ubuntu 支持、Python 3 + Tkinter 和相关权限工具；当前页面未显示 LICENSE 文件。 | <https://github.com/SYSTEM-Intel-MIC/LinuxPCManager> |
 | linux-regedit | 当前页面未显示 LICENSE 文件，许可状态未明确。 | <https://github.com/heyManNice/regedit> |

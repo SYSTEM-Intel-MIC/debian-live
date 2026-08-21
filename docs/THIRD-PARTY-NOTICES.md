@@ -2,7 +2,7 @@
 
 Copyright © 2026 SYSTEM-Intel-MIC。Lindows 自有的构建脚本、配置、打包元数据、品牌资源、文档和集成代码，除文件另有说明外，采用 GNU GPL-3.0-or-later，许可证全文见 [`LICENSE`](../LICENSE)。
 
-本仓库是一个聚合发行项目。**根目录的 GPL 许可证不会改变第三方组件的原始许可证。** 每个第三方组件仍按其上游许可证、版权声明和分发条件提供。许可证文本副本见 [`LICENSES/`](LICENSES/)。
+本仓库是一个聚合发行项目。**根目录的 GPL 许可证不会改变第三方组件的原始许可证。** 每个第三方组件仍按其上游许可证、版权声明和分发条件提供。许可证文本副本见 [`LICENSES/`](../LICENSES/)。
 
 ## 固定组件清单
 
@@ -15,13 +15,13 @@ Copyright © 2026 SYSTEM-Intel-MIC。Lindows 自有的构建脚本、配置、�
 | bsod | [heyManNice/bsod](https://github.com/heyManNice/bsod)，固定提交 `45757f64e6fa2983e92382a2ba8e47b1685d92f9` | MIT | 保留 MIT 版权和许可证文本；Lindows 入口仅以 `--restore` 演示模式调用。 |
 | Device Manager | [daimile2/Device-Manager-But-Linux](https://github.com/daimile2/Device-Manager-But-Linux)，固定提交 `e7e8238cc72a08ce0302e4ffbd529838f49fbed4` | MIT | 保留 MIT 版权和许可证文本。 |
 | PeaZip 11.2.0 | [peazip/PeaZip](https://github.com/peazip/PeaZip)，官方 `peazip_11.2.0.LINUX.Qt6-1_amd64.deb` | LGPL-3.0 | 使用上游官方二进制包；构建脚本校验 SHA-256 `11af7ca6fd633566eb8de969b43ca257b8bce759421775c8c7bbb66105406e58`。源码和许可证从上游项目获取。 |
-| SAS-for-Linux | [macOS-Terminal/SAS-for-Linux](https://github.com/macOS-Terminal/SAS-for-Linux)，固定提交 `7b933fa` | 当前云端页面未显示 LICENSE，状态未明确 | 不因 ElevenDE 根目录 GPL 而自动重新授权；保留上游来源和状态。 |
-| Explorer-for-Linux | [macOS-Terminal/Explorer-for-Linux](https://github.com/macOS-Terminal/Explorer-for-Linux)，固定提交 `4a9e19f` | 当前云端页面未显示 LICENSE，状态未明确 | 不因 ElevenDE 根目录 GPL 而自动重新授权；保留上游来源和状态。 |
+| SAS-for-Linux | [macOS-Terminal/SAS-for-Linux](https://github.com/macOS-Terminal/SAS-for-Linux)，固定提交 `6f06ef4c2817729d6c1359a800458f683b4878f4` | MIT；Copyright (c) 2026 macOS-Terminal | 保留上游 MIT 条款与版权声明；不因 ElevenDE 根目录 GPL 而自动重新授权。 |
+| Explorer-for-Linux | [macOS-Terminal/Explorer-for-Linux](https://github.com/macOS-Terminal/Explorer-for-Linux)，上游许可证提交 `18676e1ce74b4dfa0c4eb897bc6c7cfe681f9db6`；ElevenDE 集成副本固定在 `80d833958ad84f27b2890160a31d1443fe3c5ba6` | 上游 MIT；Copyright (c) 2026 macOS-Terminal；ElevenDE 集成副本含重大重构 | 上游原始部分保留 MIT 条款；ElevenDE 对 Explorer 的修改、重构和集成部分按 ElevenDE GPL-3.0-or-later 声明，不能将整个重构副本简单标为纯 MIT 或纯 GPL。 |
 | runbox-linux | [SYSTEM-Intel-MIC/runbox-linux](https://github.com/SYSTEM-Intel-MIC/runbox-linux)，固定提交 `a8a4786` | MIT（README 明确声明） | 保留 MIT 版权和许可证条件；不将其改标为 GPL。 |
 
 ## ElevenDE 上游边界
 
-云端 ElevenDE 固定提交为 `80d833958ad84f27b2890160a31d1443fe3c5ba6`。ElevenDE 自有代码按 GPL-3.0-or-later 发布，并集成 SAS-for-Linux、Explorer-for-Linux 与 runbox-linux。前两个上游页面未显示明确 LICENSE；runbox-linux README 明确为 MIT。ElevenDE 根目录的 GPL 不自动改写这些上游组件。
+云端 ElevenDE 固定提交为 `80d833958ad84f27b2890160a31d1443fe3c5ba6`。ElevenDE 自有代码按 GPL-3.0-or-later 发布，并集成 SAS-for-Linux、Explorer-for-Linux 与 runbox-linux。SAS-for-Linux 与 Explorer-for-Linux 上游均已加入 MIT LICENSE；其中 Explorer 在 ElevenDE 中经过重大修改和基本重构，必须区分上游 MIT 部分与 ElevenDE 修改部分。runbox-linux README 明确为 MIT。ElevenDE 根目录的 GPL 不自动改写这些上游组件。
 
 ## Debian 与系统依赖
 

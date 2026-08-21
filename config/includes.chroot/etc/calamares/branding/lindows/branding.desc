@@ -16,10 +16,10 @@ strings:
     versionedName: Lindows 1.0
     shortVersionedName: Lindows 1.0
     bootloaderEntryName: Lindows
-    productUrl: https://github.com/SYSTEM-Intel-MIC/debian-live
-    supportUrl: https://github.com/SYSTEM-Intel-MIC/debian-live/issues
-    knownIssuesUrl: https://github.com/SYSTEM-Intel-MIC/debian-live/issues
-    releaseNotesUrl: https://github.com/SYSTEM-Intel-MIC/debian-live/releases
+    productUrl: https://github.com/SYSTEM-Intel-MIC/lindows
+    supportUrl: https://github.com/SYSTEM-Intel-MIC/lindows/issues
+    knownIssuesUrl: https://github.com/SYSTEM-Intel-MIC/lindows/issues
+    releaseNotesUrl: https://github.com/SYSTEM-Intel-MIC/lindows/releases
 
 images:
     productIcon: "lindows-mark.svg"
