@@ -74,6 +74,9 @@ jobs:
             --workdir /workspace \
             rust:1.95-bookworm \
             bash ./scripts/build-lindows2-extra-components.sh
+          # Recipes run as root in their Debian containers; return the workspace
+          # artifacts to the runner user before writing manifests and cache data.
+          sudo chown -R "$USER:$USER" artifacts
           ( cd artifacts/packages && sha256sum *.deb > SHA256SUMS )
           python3 scripts/write-lindows-build-manifest.py
           test -f artifacts/packages/elevende_3.5.1_amd64.deb
