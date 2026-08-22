@@ -83,7 +83,7 @@ apt-get install -y --no-install-recommends \
     libgdk-pixbuf-2.0-dev librsvg2-bin qt6-base-dev qt6-svg-dev \
     libgl1-mesa-dev libpng-dev libxft-dev libx11-dev libfontconfig1-dev \
     libgtk-3-dev \
-    python3 python3-gi gir1.2-gtk-3.0 \
+    python3 python3-pil python3-gi gir1.2-gtk-3.0 \
     udisks2 dosfstools ntfs-3g mtools
 
 log "acquiring published ElevenDE 3.5.1 from the locked source cache"
