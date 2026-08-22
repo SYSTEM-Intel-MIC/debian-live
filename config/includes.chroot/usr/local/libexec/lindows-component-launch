@@ -1,0 +1,18 @@
+#!/bin/sh
+# Lindows desktop-integration adapter for third-party component entry points.
+# It deliberately changes only desktop/session integration; application logic
+# remains upstream-owned and is isolated in its individual Debian package.
+set -eu
+
+[ "$#" -gt 0 ] || exit 64
+export XDG_CURRENT_DESKTOP=ElevenDE
+export XDG_SESSION_DESKTOP=ElevenDE
+export XDG_SESSION_TYPE=x11
+export XDG_DATA_DIRS="/usr/local/share:/usr/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}"
+export GDK_BACKEND=x11
+export GTK_CSD=0
+export MOZ_GTK_TITLEBAR_DECORATION=system
+export QT_QPA_PLATFORM=xcb
+# The global GTK CSS uses the ElevenDE light/accent palette for stock controls.
+export GTK_THEME="${GTK_THEME:-Adwaita}"
+exec "$@"

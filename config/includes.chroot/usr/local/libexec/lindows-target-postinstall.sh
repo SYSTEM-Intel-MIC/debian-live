@@ -5,33 +5,29 @@ set -eu
 # shellprocess. It must be safe to run more than once.
 TARGET=/
 
-# The Live image deliberately autologins a temporary `user` account. Never
-# carry that policy into the installed target: it resets the user's password,
-# suppresses LightDM's greeter, and breaks logout/login recovery.
+# The Live image starts a temporary `user` session directly. The installed
+# system must never preserve that identity or bypass authentication: ElevenDE's
+# own Win11-style login gate authenticates the Calamares-created account.
 if command -v systemctl >/dev/null 2>&1; then
     systemctl disable lindows-live-session-init.service >/dev/null 2>&1 || true
 fi
 rm -f /etc/systemd/system/lindows-live-session-init.service \
       /etc/systemd/system/multi-user.target.wants/lindows-live-session-init.service \
-      /etc/systemd/system/lightdm.service.d/10-lindows-live-user.conf \
-      /usr/local/sbin/lindows-lightdm \
-      /usr/local/sbin/lindows-live-session-init \
-      /etc/lightdm/lightdm.conf.d/99-lindows-autologin.conf \
-      /etc/lightdm/lightdm.conf.d/50-lindows.conf
+      /usr/local/sbin/lindows-live-session-init
+rm -rf /etc/lightdm /etc/systemd/system/lightdm.service.d
 rm -f /etc/xdg/autostart/lindows-desktop-trust.desktop
-# LightDM is only the session launcher. ElevenDE's own elevende-lock login
-# page must remain visible, so autologin the Calamares-created human account
-# into ElevenDE instead of showing a second LightDM greeter.
-installed_account=$(awk -F: '$3 >= 1000 && $3 < 60000 && $1 != "nobody" {print $1; exit}' /etc/passwd)
+# The Live account is created at boot and must never be selected should its
+# passwd entry happen to be visible while Calamares runs.  A Calamares-created
+# normal user is the final eligible account in the target passwd database.
+human_accounts=$(awk -F: '$3 >= 1000 && $3 < 60000 && $1 != "nobody" && $1 != "user" && $1 != "live" {print $1}' /etc/passwd)
+installed_account=$(printf '%s\n' "$human_accounts" | sed '/^$/d' | tail -n1)
 if [ -n "$installed_account" ]; then
-    install -Dm644 /dev/stdin /etc/lightdm/lightdm.conf.d/60-lindows-installed.conf <<EOF
-[Seat:*]
-user-session=elevende
-autologin-user=$installed_account
-autologin-user-timeout=0
-autologin-session=elevende
-greeter-hide-users=false
+    install -Dm644 /dev/stdin /etc/lindows/session-user <<EOF
+$installed_account
 EOF
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl enable lindows-elevende-display.service >/dev/null 2>&1 || true
+    fi
 fi
 
 # Installed systems must not keep the Live-only installer entry.
@@ -72,15 +68,16 @@ else
     rm -f /etc/default/grub.d/00-lindows.cfg
 fi
 
-# Enable a real lock screen for the installed graphical session.
-if command -v light-locker >/dev/null 2>&1; then
+# Use ElevenDE's own lock program for installed sessions.  xss-lock observes
+# idle/DPMS state without requiring LightDM or a second locker implementation.
+if command -v xss-lock >/dev/null 2>&1 && [ -x /usr/local/bin/elevende-lock ]; then
     install -Dm644 /dev/stdin /etc/xdg/autostart/lindows-lock.desktop <<'EOF'
 [Desktop Entry]
 Type=Application
 Name=Lindows Screen Lock
 Name[zh_CN]=Lindows 锁屏
-Exec=sh -c 'xset s 600 600; xset +dpms; xset dpms 0 0 900; exec light-locker --lock-after-screensaver=1 --idle-hint'
-OnlyShowIn=ElevenDE;LXDE;Openbox;
+Exec=sh -c 'xset s 600 600; xset +dpms; xset dpms 0 0 900; exec xss-lock --transfer-sleep-lock -- /usr/local/bin/elevende-lock --lock'
+OnlyShowIn=ElevenDE;Openbox;
 NoDisplay=true
 X-GNOME-Autostart-enabled=true
 EOF
@@ -113,9 +110,9 @@ EOF
 # Preserve the password entered in Calamares and make the created human user
 # eligible for sudo without changing or resetting its password.
 if getent group sudo >/dev/null 2>&1; then
-    for account in $(awk -F: '$3 >= 1000 && $3 < 60000 && $1 != "nobody" {print $1}' /etc/passwd); do
-        usermod -aG sudo "$account" >/dev/null 2>&1 || true
-    done
+    if [ -n "$installed_account" ]; then
+        usermod -aG sudo "$installed_account" >/dev/null 2>&1 || true
+    fi
 fi
 
 # Refresh device state and initramfs so firmware already present in the target

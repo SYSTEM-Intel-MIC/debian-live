@@ -14,16 +14,14 @@ firmware-misc-nonfree
 firmware-amd-graphics
 firmware-intel-sound
 
-# X11 session, light display manager and lightweight compositor/window manager
+# X11 session, ElevenDE native display service and lightweight compositor/window manager
 xorg
 xinit
+xauth
 x11-xserver-utils
 x11-utils
 openbox
 picom
-lightdm
-lightdm-gtk-greeter
-light-locker
 xss-lock
 xterm
 dbus-x11

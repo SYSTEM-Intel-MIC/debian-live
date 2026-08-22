@@ -1,0 +1,24 @@
+[Unit]
+Description=Lindows ElevenDE native X11 display and session
+Documentation=file:///usr/share/doc/elevende/README.md
+After=systemd-user-sessions.service systemd-logind.service NetworkManager.service lindows-live-session-init.service
+Wants=network-online.target lindows-live-session-init.service
+After=network-online.target
+Conflicts=display-manager.service lightdm.service
+Before=graphical.target
+
+[Service]
+Type=simple
+TTYPath=/dev/tty7
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+StandardInput=tty
+StandardOutput=journal+console
+StandardError=journal+console
+ExecStart=/usr/local/sbin/lindows-elevende-display
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical.target
