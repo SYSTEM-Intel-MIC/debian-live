@@ -25,6 +25,9 @@ source_locked() {
         mkdir -p "$(dirname "$cache")"
         git clone --filter=blob:none "$url" "$cache"
     fi
+    # The restored cache belongs to the GitHub runner UID, while this recipe
+    # deliberately runs as root in its isolated container.
+    git config --global --add safe.directory "$cache"
     if ! git -C "$cache" cat-file -e "${rev}^{commit}" 2>/dev/null; then
         git -C "$cache" fetch --filter=blob:none origin "$rev"
     fi

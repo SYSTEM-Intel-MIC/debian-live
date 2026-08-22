@@ -29,6 +29,10 @@ source_locked() {
         mkdir -p "$(dirname "$cache")"
         git clone --filter=blob:none "$url" "$cache"
     fi
+    # actions/cache restores files with the runner UID while this recipe runs
+    # as root in a Bookworm container. Mark only this immutable cache checkout
+    # as safe before inspecting its locked commit.
+    git config --global --add safe.directory "$cache"
     if ! git -C "$cache" cat-file -e "${rev}^{commit}" 2>/dev/null; then
         git -C "$cache" fetch --filter=blob:none origin "$rev"
     fi
